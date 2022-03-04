@@ -18,6 +18,8 @@
     <img src="https://img.shields.io/twitter/follow/wickeditor?style=social&logo=twitter" alt="follow on Twitter"></a>
 </p>
 
+hi i am pkhead and how do i use git????
+
 <h1>Wick Editor</h1>
 
 The Wick Editor is a free and open-source tool for creating games, animations, and everything in-between. It's designed to be the most accessible tool for creating multimedia projects on the web.
