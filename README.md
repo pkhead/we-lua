@@ -19,6 +19,7 @@
 </p>
 
 hi i am pkhead and how do i use git????
+Ohh so that's how i use git
 
 <h1>Wick Editor</h1>
 
