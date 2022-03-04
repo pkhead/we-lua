@@ -355,7 +355,7 @@ Wick.Tickable = class extends Wick.Base {
         if(this.scriptIsContentful(name)) {
             var script = this.getScript(name);
             var fn = this._cachedScripts[name] || this._evalScript(name, script.src);
-            if(!(fn instanceof Function)) {
+            if(fn == null) {
                 return fn; // error
             }
 
@@ -487,6 +487,7 @@ Wick.Tickable = class extends Wick.Base {
     }
 
     _evalScript (name, src) {
+        /*
         var fn = null;
 
         // Check for syntax/parsing errors
@@ -506,8 +507,10 @@ Wick.Tickable = class extends Wick.Base {
             this.project.error = this._generateErrorInfo(e, name);
             return;
         }
-
-        return fn;
+        
+        return fn*/
+        
+        return src;
     }
 
     /**
@@ -539,9 +542,11 @@ Wick.Tickable = class extends Wick.Base {
             });
           }
 
+          /*
           apiMembers.forEach(apiMember => {
               window[apiMember.name] = apiMember.fn;
           });
+          */
 
           // These are currently hacked in here for performance reasons...
           var project = this.project;
@@ -559,13 +564,35 @@ Wick.Tickable = class extends Wick.Base {
 
           // Run the function
           var thisScope = this instanceof Wick.Frame ? this.parentClip : this;
+
+          let lua = new Lua.State();
+
+          var f_next = lua.pushFunction(function(L) {
+              globalAPI.next();
+              return 0;
+          });
+          lua.setGlobal("next");
+
+          var f_stop = lua.pushFunction(L => {
+              globalAPI.stop();
+              return 0;
+          });
+          lua.setGlobal("stop");
+
           try {
-              fn.bind(thisScope)();
+              lua.loadString(fn, name);
+              lua.runFunc(null, 0);
+              //fn.bind(thisScope)();
           } catch (e) {
               // Catch runtime errors
               console.error(e);
               error = this._generateErrorInfo(e, name);
           }
+
+          lua.close();
+
+          Lua.deallocFunction(f_next);
+          Lua.deallocFunction(f_stop);
 
           // These are currently hacked in here for performance reasons...
           delete window.project;
@@ -573,10 +600,12 @@ Wick.Tickable = class extends Wick.Base {
           delete window.parent;
           delete window.parentObject;
 
+          /*
           // Detatch API methods
           apiMembers.forEach(apiMember => {
               delete window[apiMember.name];
           });
+          */
 
           return error;
     }
