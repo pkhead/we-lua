@@ -22,6 +22,7 @@ gulp.task("default", function() {
   /* Libraries */
   var libs = gulp
     .src([
+      'lib/lua.js',
       'lib/paper.js',
       'lib/base64-arraybuffer.js',
       'lib/convert-range.js',
