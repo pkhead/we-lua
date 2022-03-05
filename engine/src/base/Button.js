@@ -21,6 +21,11 @@
  * A class representing a Wick Button.
  * Buttons are just clips with special timelines controlled by mouse interactions.
  */
+Lua.onready(() => {
+    luaCreateClass(window.globalLua, "Clip", "Button", {
+    });
+});
+
 Wick.Button = class extends Wick.Clip {
     /**
      * Create a new button.

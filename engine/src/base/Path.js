@@ -17,6 +17,11 @@
  * along with Wick Engine.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+Lua.onready(() => {
+    luaCreateClass(window.globalLua, "Base", "Path", {
+
+    });
+});
 /**
  * Represents a Wick Path.
  */

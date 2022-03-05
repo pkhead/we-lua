@@ -31,6 +31,21 @@ Lua.onready(() => {
             return 1;
         },
 
+        __func__hits(L) {
+            var a = luaGetObject(L, 1, "Clip");
+            if (!a) return 0;
+            var b = luaGetObject(L, 2, "Clip");
+            if (!b) return 0;
+
+            L.pushBoolean(a.hits(b));
+            return 1;
+        },
+
+        __get__timeline(L) {
+            luaWrapObject(L, this.timeline);
+            return 1;
+        },
+
         __get__x(L) {
             L.pushNumber(this.x);
             return 1;

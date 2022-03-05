@@ -20,6 +20,31 @@
 /**
  * Class representing a Wick Project.
  */
+Lua.onready(() => {
+    luaCreateClass(window.globalLua, "Base", "Project", {
+        __get__width(L) {
+            L.pushNumber(this.width);
+            return 1;
+        },
+
+        __get__height(L) {
+            L.pushNumber(this.height);
+            return 1;
+        },
+
+        __get__framerate(L) {
+            L.pushNumber(this.framerate);
+            return 1;
+        },
+
+        /*
+        TODO
+        __get__hitTestOptions(L) {
+
+        }
+        */
+    })
+})
 Wick.Project = class extends Wick.Base {
     /**
      * Create a project.

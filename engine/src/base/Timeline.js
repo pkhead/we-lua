@@ -20,6 +20,59 @@
 /**
  * Class representing a Wick Timeline.
  */
+Lua.onready(() => {
+    luaCreateClass(window.globalLua, "Base", "Timeline", {
+        __func__play(L) {
+            var timeline = luaGetObject(L, 1, "Timeline");
+            if (!timeline) return 0;
+
+            timeline.play();
+            return 0;
+        },
+
+        __func__stop(L) {
+            var timeline = luaGetObject(L, 1, "Timeline");
+            if (!timeline) return 0;
+
+            timeline.stop();
+            return 0;
+        },
+
+        __func__gotoNextFrame(L) {
+            var timeline = luaGetObject(L, 1, "Timeline");
+            if (!timeline) return 0;
+
+            timeline.gotoNextFrame();
+            return 0;
+        },
+
+        __func__gotoPrevFrame(L) {
+            var timeline = luaGetObject(L, 1, "Timeline");
+            if (!timeline) return 0;
+
+            timeline.gotoPrevFrame();
+            return 0;
+        },
+
+        __func__gotoAndPlay(L) {
+            var timeline = luaGetObject(L, 1, "Timeline");
+            if (!timeline) return 0;
+
+            var frame = L.checkInt(2);
+            timeline.gotoAndPlay(frame);
+            return 0;
+        },
+
+        __func__gotoAndPlay(L) {
+            var timeline = luaGetObject(L, 1, "Timeline");
+            if (!timeline) return 0;
+
+            var frame = L.checkInt(2);
+            timeline.gotoAndStop(frame);
+            return 0;
+        },
+    });
+})
 Wick.Timeline = class extends Wick.Base {
     /**
      * Create a timeline.

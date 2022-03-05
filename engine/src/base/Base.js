@@ -77,6 +77,9 @@ Lua.onready(() => {
         },
 
         __func__getChildren(L) {
+            var item = luaGetObject(L, 1, "Base");
+            if (!item) return 0;
+            
             L.createTable();
 
             for (let i = 0; i < item._children.length; i++) {

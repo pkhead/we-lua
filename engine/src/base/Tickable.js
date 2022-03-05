@@ -626,8 +626,67 @@ Wick.Tickable = class extends Wick.Base {
         }));
         lua.setGlobal("showCursor");
 
+        funcs.push(lua.pushFunction(L => {
+            var name = L.checkString(1);
+
+            var options;
+
+            if (L.getType(2) !== Lua.TNONE) {
+                if (!L.isTable(2)) {
+                    L.throwTypeError(2, "table");
+                    return 0;
+                }
+
+                options = {};
+
+                L.pushString("seekMS");
+                L.getTable(2);
+
+                if (!L.isNil(-1)) {
+                    options.seekMS = L.checkNumber(-1);
+                }
+
+                L.pushString("volume");
+                L.getTable(2);
+
+                if (!L.isNil(-1)) {
+                    options.volume = L.checkNumber(-1);
+                }
+
+                L.pushString("loop");
+                L.getTable(2);
+
+                if (!L.isNil(-1)) {
+                    options.loop = L.getBoolean(-1);
+                }
+
+                L.pop(3);
+            }
+
+            var id = globalAPI.playSound(name, options);
+            L.pushInt(id);
+            return 1;
+        }));
+        lua.setGlobal("playSound");
+
+        funcs.push(lua.pushFunction(L => {
+            var name = L.checkString(1);
+            var id;
+
+            if (L.getType(2) !== Lua.TNONE) {
+                id = L.checkInt(2);
+            }
+
+            globalAPI.stopSound(name, id);
+            return 0;
+        }));
+        lua.setGlobal("stopSound");
+
         luaWrapObject(lua, this);
         lua.setGlobal("self");
+
+        luaWrapObject(lua, this.project);
+        lua.setGlobal("project");
 
         if (params) {
             for (let paramName in params) {
