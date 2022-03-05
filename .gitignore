@@ -13,6 +13,7 @@
 /build-ios/WebViewExample/local_html
 /build-electron
 /dist
+gulp-build.sh
 
 # misc
 .DS_Store

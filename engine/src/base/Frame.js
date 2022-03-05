@@ -20,6 +20,32 @@
 /**
  * A class representing a frame.
  */
+Lua.onready(() => {
+    luaExtendClass(window.globalLua, "Tickable", "Frame", {
+        __index(L) {
+            var self = L.checkUserdata(1, "Frame");
+            
+            if (!self) return 0;
+
+            var index = L.getString(2);
+            var frame = window.project.getObjectByUUID(self.uuid);
+
+            switch (index) {
+                case "currentFrameName":
+                    L.pushString(frame.currentFrameName);
+                    break;
+                case "currentFrameNumber":
+                    L.pushInt(frame.currentFrameNumber);
+                    break;
+                default:
+                    luaMetafield(L, 1, index);
+                    break;
+            }
+
+            return 1;
+        }
+    })
+})
 Wick.Frame = class extends Wick.Tickable {
     /**
      * Create a new frame.

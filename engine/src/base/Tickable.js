@@ -20,6 +20,13 @@
 /**
  * A class that is extended by any wick object that ticks.
  */
+
+Lua.onready(() => {
+    luaExtendClass(window.globalLua, "Base", "Tickable", {
+        __index: "__SELF__"
+    })
+});
+
 Wick.Tickable = class extends Wick.Base {
     /**
      * Debugging feature. Logs errors as they happen
@@ -513,6 +520,139 @@ Wick.Tickable = class extends Wick.Base {
         return src;
     }
 
+    _initLuaState(lua, globalAPI, params, thisScope) {
+        Lua.onprint = console.log;
+        Lua.onprinterr = console.error;
+
+        var funcs = [];
+
+        funcs.push(lua.pushFunction(function(L) {
+            globalAPI.gotoNextFrame();
+            return 0;
+        }));
+        lua.setGlobal("gotoNextFrame");
+
+        funcs.push(lua.pushFunction(function(L) {
+            globalAPI.gotoPrevFrame();
+            return 0;
+        }));
+        lua.setGlobal("gotoPrevFrame");
+
+        funcs.push(lua.pushFunction(function(L) {
+            globalAPI.play();
+            return 0;
+        }));
+        lua.setGlobal("play");
+
+        funcs.push(lua.pushFunction(function(L) {
+            globalAPI.stop();
+            return 0;
+        }));
+        lua.setGlobal("stop");
+
+        funcs.push(lua.pushFunction(L => {
+            globalAPI.stop();
+            return 0;
+        }));
+        lua.setGlobal("stop");
+
+        funcs.push(lua.pushFunction(function(L) {
+            var num = L.checkInt(1);
+            globalAPI.gotoAndPlay(num);
+            return 0;
+        }));
+        lua.setGlobal("gotoAndPlay");
+
+        funcs.push(lua.pushFunction(function(L) {
+            var num = L.checkInt(1);
+            globalAPI.gotoAndStop(num);
+            return 0;
+        }));
+        lua.setGlobal("gotoAndStop");
+
+        funcs.push(lua.pushFunction(L => {
+            L.pushNumber(globalAPI.mouseX);
+            return 1;
+        }));
+        lua.setGlobal("mouseX");
+
+        funcs.push(lua.pushFunction(L => {
+            L.pushNumber(globalAPI.mouseY);
+            return 1;
+        }));
+        lua.setGlobal("mouseY");
+
+        funcs.push(lua.pushFunction(L => {
+            L.pushNumber(globalAPI.mouseMoveX);
+            return 1;
+        }));
+        lua.setGlobal("mouseMoveX");
+
+        funcs.push(lua.pushFunction(L => {
+            L.pushNumber(globalAPI.mouseMoveY);
+            return 1;
+        }));
+        lua.setGlobal("mouseMoveY");
+
+        funcs.push(lua.pushFunction(L => {
+            L.pushBoolean(globalAPI.isMouseDown());
+            return 1;
+        }));
+        lua.setGlobal("isMouseDown");
+
+        funcs.push(lua.pushFunction(L => {
+            var k = L.checkString(1);
+            L.pushBoolean(globalAPI.isKeyDown(k));
+            return 1;
+        }));
+        lua.setGlobal("isKeyDown");
+
+        funcs.push(lua.pushFunction(L => {
+            var k = L.checkString(1);
+            L.pushBoolean(globalAPI.isKeyJustPressed(k));
+            return 1;
+        }));
+        lua.setGlobal("isKeyJustPressed");
+
+        funcs.push(lua.pushFunction(L => {
+            globalAPI.hideCursor();
+            return 0;
+        }));
+        lua.setGlobal("hideCursor");
+
+        funcs.push(lua.pushFunction(L => {
+            globalAPI.showCursor();
+            return 0;
+        }));
+        lua.setGlobal("showCursor");
+
+        this.luaWrapper(lua);
+        lua.setGlobal("self");
+
+        if (params) {
+            for (let paramName in params) {
+                let paramVal = params[paramName];
+
+                switch(typeof(paramVal)) {
+                    case "string":
+                        lua.pushString(paramVal);
+                        break;
+                    case "number":
+                        lua.pushNumber(paramVal);
+                        break;
+                    default:
+                        console.warn(`will not push param ${paramName}: ${typeof(paramVal)}`);
+                        lua.pushNil();
+                        break;
+                }
+
+                lua.setGlobal(paramName);
+            }
+        }
+        
+        return funcs;
+    }
+
     /**
      * _runFunction runs an event function while passing in necessary global and local parameters.
      * @param {string} fn - Function to run.
@@ -551,6 +691,8 @@ Wick.Tickable = class extends Wick.Base {
           // These are currently hacked in here for performance reasons...
           var project = this.project;
           var root = project && project.root;
+
+          /*
           window.project = root;
           if(project) {
               window.project.resolution = {x: project.width, y: project.height};
@@ -561,23 +703,17 @@ Wick.Tickable = class extends Wick.Base {
           window.root = root;
           window.parent = this.parentClip;
           window.parentObject = this.parentObject;
+          */
+
+          // what kinda oop is this?
+          var thisScope = this instanceof Wick.Frame ? this.parent : this;
 
           // Run the function
-          var thisScope = this instanceof Wick.Frame ? this.parentClip : this;
+          var lua = window.globalLua.fork();
 
-          let lua = new Lua.State();
+          console.log(parameters);
 
-          var f_next = lua.pushFunction(function(L) {
-              globalAPI.next();
-              return 0;
-          });
-          lua.setGlobal("next");
-
-          var f_stop = lua.pushFunction(L => {
-              globalAPI.stop();
-              return 0;
-          });
-          lua.setGlobal("stop");
+          var funcs = this._initLuaState(lua, globalAPI, parameters, thisScope);
 
           try {
               lua.loadString(fn, name);
@@ -589,16 +725,14 @@ Wick.Tickable = class extends Wick.Base {
               error = this._generateErrorInfo(e, name);
           }
 
+          funcs.forEach(Lua.deallocFunction);
           lua.close();
 
-          Lua.deallocFunction(f_next);
-          Lua.deallocFunction(f_stop);
-
           // These are currently hacked in here for performance reasons...
-          delete window.project;
-          delete window.root;
-          delete window.parent;
-          delete window.parentObject;
+          //delete window.project;
+          //delete window.root;
+          //delete window.parent;
+          //delete window.parentObject;
 
           /*
           // Detatch API methods

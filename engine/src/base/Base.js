@@ -20,6 +20,86 @@
 /**
  * The base class for all objects within the Wick Engine.
  */
+Lua.onready(() => {
+    luaCreateClass(window.globalLua, "Base", {
+        __index__(L) {
+            if (!luaIsA(L, 1, "Base")) {
+                L.throwTypeError(1, "Base");
+                return 0;
+            }
+
+            var self = L.getUserdata(1);
+            
+            if (!self) {
+                L.throwError("exception");
+                return 0;
+            }
+
+            var index = L.getString(2);
+            var item = window.project.getObjectByUUID(self.uuid);
+
+            switch (index) {
+                case "parent":
+                    item.parent.luaWrapper(L);
+                    break;
+                case "parentFrame":
+                    item.parentFrame.luaWrapper(L);
+                    break;
+                case "parentFrame":
+                    item.parentClip.luaWrapper(L);
+                    break;
+                default:
+                    L.throwError(`attempt to access undefined field "${index}"`);
+                    return 0;
+            }
+
+            return 1;
+        },
+
+        __newindex(L) {
+            var key = L.getString(2);
+
+            L.throwError(`attempt to access undefined field ${key}`);
+            return 0;
+        },
+
+        __gc(L) {
+            console.log("__gc");
+            
+            /*
+            L.pushString("__name");
+            L.getTable(1);
+            console.log(L.getString(-1));
+
+            var self = L.getUserdata(1);
+            var js_obj = luaUserdata.get(self);
+
+            luaUserdata.delete(self);
+            luaWrappers.delete(js_obj);
+            */
+
+            L.unlinkUserdata(self);
+        },
+
+        __eq(L) {
+            if (!luaIsA(L, 1, "Base")) {
+                L.throwTypeError(1, "Wick object");
+                return 0;
+            }
+
+            if (!luaIsA(L, 2, "Base")) {
+                L.throwTypeError(1, "Wick object");
+                return 0;
+            }
+
+            var ud1 = L.getUserdata(1);
+            var ud2 = L.getUserdata(2);
+            
+            return ud1.uuid === ud2.uuid;
+        }
+    });
+});
+
 Wick.Base = class {
     /**
      * Creates a Base object.
@@ -82,6 +162,42 @@ Wick.Base = class {
         }
 
         return object;
+    }
+
+    /**
+     * Gets/creates the Lua userdata wrapper for this instance 
+     * @param {*} L The Lua.State
+     * @returns The Lua.Userdata wrapper
+     */
+    luaWrapper(L) {
+        /*
+        var ud = luaWrappers.get(this);
+        if (ud) {
+            return ud;
+        }
+
+        // wrapper doesn't exist, create new userdata
+        ud = L.createUserdata({});
+
+        L.pushMetatable(this._classname);
+        L.setMetatable(-2);
+
+        L.pushFromStack(-1);
+        ud._ref = L.ref();
+
+        luaWrappers.set(this, ud);
+        luaUserdata.set(ud, this);
+        */
+
+        var ud = L.createUserdata({
+            uuid: `string${this.uuid.length}`
+        });
+        ud.uuid = this.uuid;
+
+        L.pushMetatable(this._classname);
+        L.setMetatable(-2);
+
+        return ud;
     }
 
     /**

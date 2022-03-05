@@ -54,6 +54,7 @@ gulp.task("default", function() {
   /* Engine */
   var src = gulp
     .src([
+      'src/LuaAPI.js',
       'src/Wick.js',
       'src/Clipboard.js',
       'src/Color.js',
