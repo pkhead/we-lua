@@ -65,6 +65,7 @@ function luaMetafield(L, i, k) {
 }
 
 function luaIsA(L, i, targetClass) {
+    if (L.getType(1) !== Lua.TUSERDATA) return false;
     if (L.getMetatable(i) === 0) return false;
 
     L.pushString("__name");

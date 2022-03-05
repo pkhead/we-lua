@@ -58,6 +58,7 @@ Wick.Project = class extends Wick.Base {
         if (!args) args = {};
         super(args);
 
+        this.itemAttributes = new Map();
         this._name = args.name || 'My Project';
         this._width = args.width || 720;
         this._height = args.height || 480;
@@ -1521,6 +1522,8 @@ Wick.Project = class extends Wick.Base {
 
         this.selection.clear();
 
+        this.itemAttributes.clear();
+
         // Start tick loop
         this._tickIntervalID = setInterval(() => {
             args.onBeforeTick();
@@ -1588,6 +1591,13 @@ Wick.Project = class extends Wick.Base {
      * Stop playing the project.
      */
     stop() {
+        for (let pair of this.itemAttributes) {
+            let ref = pair[1];
+            window.globalLua.unref(ref);
+        }
+        
+        this.itemAttributes.clear();
+
         this._playing = false;
         this.view.paper.view.autoUpdate = true;
 

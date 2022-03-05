@@ -44,6 +44,7 @@ Lua.onready(() => {
             luaDeleteWrapper(L, self);
         },
 
+        /*
         eq(L) {
             if (!luaIsA(L, 1, "Base")) {
                 L.throwTypeError(1, "Base");
@@ -60,6 +61,7 @@ Lua.onready(() => {
             
             return ud1.uuid === ud2.uuid;
         },
+        */
 
         __get__parent(L) {
             luaWrapObject(L, this.parent);
@@ -88,6 +90,25 @@ Lua.onready(() => {
                 L.rawSetInteger(-2, i + 1);
             }
 
+            return 1;
+        },
+
+        __get__attributes(L) {
+            var item = luaGetObject(L, 1, "Base");
+            if (!item) return 0;
+
+            var itemAttributes = window.project.itemAttributes;
+            var attributes = itemAttributes.get(item);
+
+            if (attributes) {
+                L.pushRef(attributes);
+            } else {
+                L.createTable();
+                L.pushFromStack(-1);
+                attributes = L.ref();
+                itemAttributes.set(item, attributes);
+            }
+            
             return 1;
         }
     });

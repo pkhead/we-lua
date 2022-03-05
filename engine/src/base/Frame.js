@@ -30,9 +30,28 @@ Lua.onready(() => {
         __get__currentFrameNumber(L) {
             L.pushInt(this.currentFrameNumber);
             return 1;
+        },
+
+        __func__getClip(L) {
+            var frame = luaGetObject(L, 1, "Clip");
+            if (!frame) return 0;
+
+            var query = L.checkString(2);
+            if (!query) return 0;
+
+            for (let child of frame._children) {
+                if (child instanceof Wick.Clip && child.identifier === query) {
+                    luaWrapObject(L, child);
+                    return 1;
+                }
+            }
+
+            L.pushNil();
+            return 1;
         }
     });
-})
+});
+
 Wick.Frame = class extends Wick.Tickable {
     /**
      * Create a new frame.
