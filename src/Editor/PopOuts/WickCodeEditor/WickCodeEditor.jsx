@@ -27,7 +27,7 @@ import { Console } from 'console-feed'
 
 // Import Ace Editor and themes.
 import AceEditor from 'react-ace';
-import 'brace/mode/javascript';
+import 'brace/mode/lua';
 import 'brace/ext/searchbox';
 
 import 'brace/theme/monokai';
@@ -302,7 +302,7 @@ export default function WickCodeEditor(props) {
         props.scriptToEdit !== 'add' &&
         <AceEditor
           value={scriptToShow}
-          mode="javascript"
+          mode="lua"
           theme={props.codeEditorWindowProperties.theme}
           fontSize={props.codeEditorWindowProperties.fontSize} // TODO: Controllable by User
           width="100%"

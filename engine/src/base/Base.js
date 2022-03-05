@@ -95,7 +95,7 @@ Lua.onready(() => {
         },
 
         // this property stores a reference to a Lua table that is unique per Wick instance
-        __get__attributes(L) {
+        __get__attrs(L) {
             var item = luaGetObject(L, 1, "Base");
             if (!item) return 0;
 
