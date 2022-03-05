@@ -78,6 +78,7 @@ Lua.onready(() => {
             return 1;
         },
 
+        // returns a list of children
         __func__getChildren(L) {
             var item = luaGetObject(L, 1, "Base");
             if (!item) return 0;
@@ -93,6 +94,7 @@ Lua.onready(() => {
             return 1;
         },
 
+        // this property stores a reference to a Lua table that is unique per Wick instance
         __get__attributes(L) {
             var item = luaGetObject(L, 1, "Base");
             if (!item) return 0;
@@ -108,7 +110,7 @@ Lua.onready(() => {
                 attributes = L.ref();
                 itemAttributes.set(item, attributes);
             }
-            
+
             return 1;
         }
     });

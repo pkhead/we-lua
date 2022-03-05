@@ -1591,13 +1591,6 @@ Wick.Project = class extends Wick.Base {
      * Stop playing the project.
      */
     stop() {
-        for (let pair of this.itemAttributes) {
-            let ref = pair[1];
-            window.globalLua.unref(ref);
-        }
-        
-        this.itemAttributes.clear();
-
         this._playing = false;
         this.view.paper.view.autoUpdate = true;
 
@@ -1621,6 +1614,14 @@ Wick.Project = class extends Wick.Base {
         // Load the state of the project before it was played
         this.history.loadSnapshot('state-before-play');
         // Wick.ObjectCache.removeUnusedObjects(this);
+
+        // unreference and clear item attributes
+        for (let pair of this.itemAttributes) {
+            let ref = pair[1];
+            window.globalLua.unref(ref);
+        }
+
+        this.itemAttributes.clear();
 
         if (this.error) {
             // An error occured.
