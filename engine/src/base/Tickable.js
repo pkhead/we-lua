@@ -710,6 +710,7 @@ Wick.Tickable = class extends Wick.Base {
 
           // Run the function
           var lua = window.globalLua.fork();
+          window.globalLua.pop(1);
 
           var funcs = this._initLuaState(lua, globalAPI, parameters, thisScope);
 
