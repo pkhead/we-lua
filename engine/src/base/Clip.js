@@ -22,146 +22,94 @@
  * A class representing a Wick Clip.
  */
 Lua.onready(() => {
-    luaExtendClass(window.globalLua, "Tickable", "Clip", {
-        __index(L) {
-            if (!luaIsA(L, 1, "Clip")) {
-                L.throwTypeError(1, "Clip");
-                return 0;
-            }
+    luaCreateClass(window.globalLua, "Tickable", "Clip", {
+        __func__clone(L) {
+            var clip = luaGetObject(L, 1, "Clip");
+            if (!clip) return 0;
 
-            var self = L.getUserdata(1);
-            
-            if (!self) {
-                L.throwError("exception");
-                return 0;
-            }
-
-            var index = L.getString(2);
-            var clip = window.project.getObjectByUUID(self.uuid);
-
-            switch (index) {
-                case "x":
-                    L.pushNumber(clip.x);
-                    break;
-                case "y":
-                    L.pushNumber(clip.y);
-                    break;
-                case "width":
-                    L.pushNumber(clip.width)
-                    break;
-                case "height":
-                    L.pushNumber(clip.height);
-                    break;
-                case "scaleX":
-                    L.pushNumber(clip.scaleX);
-                    break;
-                case "scaleY":
-                    L.pushNumber(clip.scaleY);
-                    break;
-                case "rotation":
-                    L.pushNumber(clip.rotation);
-                    break;
-                case "opacity":
-                    L.pushNumber(clip.opacity);
-                    break;
-                case "currentFrameName":
-                    L.pushString(clip.currentFrameName);
-                    break;
-                case "currentFrameNumber":
-                    L.pushInt(clip.currentFrameNumber);
-                    break;
-                case "identifier":
-                    L.pushString(clip.identifier);
-                    break;
-                case "isClone":
-                    L.pushBoolean(clip.isClone);
-                    break;
-                default:
-                    luaMetafield(L, 1, index);
-                    break;
-            }
-
+            luaWrapObject(L, clip.clone());
             return 1;
         },
 
-        __newindex(L) {
-            if (!luaIsA(L, 1, "Clip")) {
-                L.throwTypeError(1, "Clip");
-                return 0;
-            }
-
-            var self = L.getUserdata(1);
-            
-            if (!self) {
-                L.throwError("exception");
-                return 0;
-            }
-
-            var index = L.getString(2);
-            var clip = window.project.getObjectByUUID(self.uuid);
-            var val;
-
-            switch (index) {
-                case "x":
-                    val = L.checkNumber(3);
-                    clip.x = val;
-                    break;
-                case "y":
-                    val = L.checkNumber(3);
-                    clip.y = val;
-                    break;
-                case "width":
-                    val = L.checkNumber(3);
-                    clip.width = val;
-                    break;
-                case "height":
-                    val = L.checkNumber(3);
-                    clip.height = val;
-                    break;
-                case "scaleX":
-                    val = L.checkNumber(3);
-                    clip.scaleX = val;
-                    break;
-                case "scaleY":
-                    val = L.checkNumber(3);
-                    clip.scaleY = val;
-                    break;
-                case "rotation":
-                    val = L.checkNumber(3);
-                    clip.rotation = val;
-                    break;
-                case "opacity":
-                    val = L.checkNumber(3);
-                    clip.opacity = val;
-                    break;
-                default:
-                    console.log("Clip.__newindex");
-                    L.getMetatable(1);
-                    L.pushFromStack(2);
-                    L.pushFromStack(3);
-                    L.setTable(-3);
-                    break;
-            }
-
-            return 0;
+        __get__x(L) {
+            L.pushNumber(this.x);
+            return 1;
         },
 
-        clone(L) {
-            if (!luaIsA(L, 1, "Clip")) {
-                L.throwTypeError(1, "Clip");
-                return 0;
-            }
+        __set__x(L) {
+            this.x = L.checkNumber(3);
+        },
 
-            var self = L.getUserdata(1);
-            
-            if (!self) {
-                L.throwError("exception");
-                return 0;
-            }
+        __get__y(L) {
+            L.pushNumber(this.y);
+            return 1;
+        },
 
-            var clip = window.project.getObjectByUUID(self.uuid);
+        __set__y(L) {
+            this.y = L.checkNumber(3);
+        },
 
-            clip.clone().luaWrapper(L);
+        __get__width(L) {
+            L.pushNumber(this.width);
+            return 1;
+        },
+
+        __set__width(L) {
+            this.width = L.checkNumber(3);
+        },
+
+        __get__height(L) {
+            L.pushNumber(this.height);
+            return 1;
+        },
+
+        __set__height(L) {
+            this.height = L.checkNumber(3);
+        },
+
+        __get__scaleX(L) {
+            L.pushNumber(this.scaleX);
+            return 1;
+        },
+
+        __set__scaleX(L) {
+            this.scaleX = L.checkNumber(3);
+        },
+
+        __get__scaleY(L) {
+            L.pushNumber(this.scaleY);
+            return 1;
+        },
+
+        __set__scaleY(L) {
+            this.scaleY = L.checkNumber(3);
+        },
+
+        __get__rotation(L) {
+            L.pushNumber(this.rotation);
+            return 1;
+        },
+
+        __set__rotation(L) {
+            this.rotation = L.checkNumber(3);
+        },
+
+        __get__opacity(L) {
+            L.pushNumber(this.opacity);
+            return 1;
+        },
+
+        __set__opacity(L) {
+            this.opacity = L.checkNumber(3);
+        },
+
+        __get__identifier(L) {
+            L.pushString(this.identifier);
+            return 1;
+        },
+
+        __get__isClone(L) {
+            L.pushBoolean(this.isClone);
             return 1;
         }
     });

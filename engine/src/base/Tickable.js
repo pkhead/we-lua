@@ -22,8 +22,8 @@
  */
 
 Lua.onready(() => {
-    luaExtendClass(window.globalLua, "Base", "Tickable", {
-        __index: "__SELF__"
+    luaCreateClass(window.globalLua, "Base", "Tickable", {
+
     });
 });
 
@@ -626,7 +626,7 @@ Wick.Tickable = class extends Wick.Base {
         }));
         lua.setGlobal("showCursor");
 
-        this.luaWrapper(lua);
+        luaWrapObject(lua, this);
         lua.setGlobal("self");
 
         if (params) {
