@@ -25,6 +25,8 @@ Lua.onready(() => {
     {
         gc(L) {
             console.log("__gc");
+
+            //console.log("__gc");
             
             /*
             L.pushString("__name");
@@ -38,7 +40,8 @@ Lua.onready(() => {
             luaWrappers.delete(js_obj);
             */
 
-            L.unlinkUserdata(self);
+            var self = L.getUserdata(1);
+            luaDeleteWrapper(L, self);
         },
 
         eq(L) {

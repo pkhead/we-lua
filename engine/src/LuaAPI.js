@@ -2,9 +2,6 @@ Lua.onready(function() {
     window.globalLua = new Lua.State();
 });
 
-// maps lua userdatas to object 
-var luaUserdata = new Map();
-
 // maps objects to lua userdatas
 var luaWrappers = new Map();
 
@@ -24,16 +21,41 @@ function luaWrapObject(L, obj) {
         L.pushNil();
         return null;
     } else {
-        var ud = L.createUserdata({
-            uuid: `string${obj.uuid.length}`
+        var ud = luaWrappers.get(obj);
+
+        if (ud) {
+            L.pushRef(ud.ref);
+            return ud;
+        }
+
+        ud = L.createUserdata({
+            uuid: `string${obj.uuid.length}`,
+            ref: "int"
         });
         ud.uuid = obj.uuid;
+
+        L.pushFromStack(-1);
+        ud.ref = L.ref();
 
         L.pushMetatable(obj._classname);
         L.setMetatable(-2);
 
+        luaWrappers.set(obj, ud);
+
         return ud;
     }
+}
+
+/**
+ * Unregisters an object wrapper. Call this when the userdata is garbage collected.
+ * @param {Lua.State} L The Lua.State
+ * @param {Wick.Base} obj The Wick object that is wrapped 
+ */
+function luaDeleteWrapper(L, ud) {
+    L.unref(ud.ref);
+    var obj = window.project.getObjectByUUID(ud.uuid);
+    luaWrappers.delete(obj);
+    L.unlinkUserdata(ud);
 }
 
 function luaMetafield(L, i, k) {
@@ -119,32 +141,32 @@ function luaCreateClass(L, superName, className, fields) {
         let superHandlers = luaClassHandlers[superName]; 
 
         handlers.index = (L, item, index) => {
-            if (funcs[index]) {
-                L.pushRef(funcs[index]);
+            if (("__func__" + index) in funcs) {
+                L.pushRef(funcs["__func__" + index]);
                 return 1;
-            } else if (fields[index]) {
-                return fields[index].call(item, L);
+            } else if (("__get__" + index) in fields) {
+                return fields["__get__" + index].call(item, L);
             } else {
-                superHandlers.index(L, item);
+                return superHandlers.index(L, item, index);
             }
         };
 
         handlers.newindex = (L, item, index) => {
-            if (fields[index]) {
+            if (index in fields) {
                 fields[index].call(item, L);
             } else {
-                superHandlers.newindex(L, item);
+                superHandlers.newindex(L, item, index);
             }
 
             return 0;
         };
     } else {
         handlers.index = (L, item, index) => {
-            if (funcs[index]) {
-                L.pushRef(funcs[index]);
+            if (("__func__" + index) in funcs) {
+                L.pushRef(funcs["__func__" + index]);
                 return 1;
-            } else if (fields[index]) {
-                return fields[index].call(item, L);
+            } else if (("__get__" + index) in fields) {
+                return fields["__get__" + index].call(item, L);
             } else {
                 L.throwError(`attempt to access nil field "${index}"`);
                 return 0;
@@ -152,7 +174,7 @@ function luaCreateClass(L, superName, className, fields) {
         };
 
         handlers.newindex = (L, item, index) => {
-            if (fields[index]) {
+            if (index in fields) {
                 fields[index].call(item, L);
             } else {
                 L.throwError(`attempt to access nil field ${index}`);
@@ -185,6 +207,7 @@ function luaCreateClass(L, superName, className, fields) {
         handlers.newindex(L, item, "__set__" + index);
         return 0;
     });
+    L.setTable(-3);
 
     // add the rest of the fields into the metatable
     // setters/getters are differentiated from metamethods
@@ -200,6 +223,8 @@ function luaCreateClass(L, superName, className, fields) {
             L.pushFromStack(-1);
             metafields[k] = L.ref();
             set.add(k);
+            console.log("metafield");
+            L.stackDump();
             L.setTable(-3);
         }
     }

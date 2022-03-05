@@ -710,8 +710,6 @@ Wick.Tickable = class extends Wick.Base {
 
           // Run the function
           var lua = window.globalLua.fork();
-          window.globalLua.pop(1);
-
           var funcs = this._initLuaState(lua, globalAPI, parameters, thisScope);
 
           try {
@@ -726,6 +724,7 @@ Wick.Tickable = class extends Wick.Base {
 
           funcs.forEach(Lua.deallocFunction);
           lua.close();
+          window.globalLua.pop(1); // pop the thread from the stack to be garbage collected
 
           // These are currently hacked in here for performance reasons...
           //delete window.project;
