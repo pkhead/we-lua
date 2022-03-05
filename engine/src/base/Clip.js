@@ -135,8 +135,9 @@ Lua.onready(() => {
                     clip.opacity = val;
                     break;
                 default:
+                    console.log("Clip.__newindex");
                     L.getMetatable(1);
-                    L.pushString(index);
+                    L.pushFromStack(2);
                     L.pushFromStack(3);
                     L.setTable(-3);
                     break;

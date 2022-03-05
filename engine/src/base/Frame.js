@@ -38,6 +38,7 @@ Lua.onready(() => {
                     L.pushInt(frame.currentFrameNumber);
                     break;
                 default:
+                    console.log("frame." + index);
                     luaMetafield(L, 1, index);
                     break;
             }

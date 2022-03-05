@@ -24,7 +24,7 @@
 Lua.onready(() => {
     luaExtendClass(window.globalLua, "Base", "Tickable", {
         __index: "__SELF__"
-    })
+    });
 });
 
 Wick.Tickable = class extends Wick.Base {
@@ -649,7 +649,7 @@ Wick.Tickable = class extends Wick.Base {
                 lua.setGlobal(paramName);
             }
         }
-        
+
         return funcs;
     }
 
@@ -710,8 +710,6 @@ Wick.Tickable = class extends Wick.Base {
 
           // Run the function
           var lua = window.globalLua.fork();
-
-          console.log(parameters);
 
           var funcs = this._initLuaState(lua, globalAPI, parameters, thisScope);
 

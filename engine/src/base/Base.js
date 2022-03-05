@@ -22,7 +22,7 @@
  */
 Lua.onready(() => {
     luaCreateClass(window.globalLua, "Base", {
-        __index__(L) {
+        __index(L) {
             if (!luaIsA(L, 1, "Base")) {
                 L.throwTypeError(1, "Base");
                 return 0;
@@ -57,6 +57,7 @@ Lua.onready(() => {
         },
 
         __newindex(L) {
+            console.log("Base.__newindex");
             var key = L.getString(2);
 
             L.throwError(`attempt to access undefined field ${key}`);
@@ -96,6 +97,27 @@ Lua.onready(() => {
             var ud2 = L.getUserdata(2);
             
             return ud1.uuid === ud2.uuid;
+        },
+
+        getChildren(L) {
+            if (!luaIsA(L, 1, "Base")) {
+                L.throwTypeError(1, "Wick object");
+                return 0;
+            }
+
+            var ud1 = L.getUserdata(1);
+
+            var item = window.project.getObjectByUUID(ud1.uuid);
+
+            L.createTable();
+
+            for (let i = 0; i < item._children.length; i++) {
+                let child = item._children[i];
+                child.luaWrapper(L);
+                L.rawSetInteger(-2, i + 1);
+            }
+
+            return 1;
         }
     });
 });
