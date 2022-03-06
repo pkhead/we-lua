@@ -205,6 +205,11 @@
     font-family: monospace;
 }
 
+.we-code-console-crap {
+    overflow-y: scroll;
+    height: 20px;
+}
+
 .we-code-console-options-container {
     margin-left: auto;
     display: flex;
