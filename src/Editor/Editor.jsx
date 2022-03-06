@@ -53,8 +53,10 @@ import AssetLibrary from './Panels/AssetLibrary/AssetLibrary';
 import Outliner from './Panels/Outliner/Outliner';
 import OutlinerExpandButton from './Panels/OutlinerExpandButton/OutlinerExpandButton';
 import WickCodeEditor from './PopOuts/WickCodeEditor/WickCodeEditor';
+import ConsolePanel from './Panels/ConsolePanel/ConsolePanel';
 
 import EditorWrapper from './EditorWrapper';
+import ConsoleExpandButton from './Panels/ConsoleExpandButton/ConsoleExpandButton';
 
 const { version } = require('../../package.json');
 
@@ -84,7 +86,9 @@ class Editor extends EditorCore {
       showCodeErrors: false,
       codeError: null,
       popoutOutlinerSize: 250,
+      consoleOutlinerSize: 250,
       outlinerPoppedOut: false,
+      consolePoppedOut: false,
       inspectorSize: 250,
       timelineSize: 175,
       assetLibrarySize: 150,
@@ -436,6 +440,10 @@ class Editor extends EditorCore {
     this.setState({outlinerPoppedOut: !this.state.outlinerPoppedOut});
   }
 
+  toggleConsole = () => {
+    this.setState({consolePoppedOut: !this.state.consolePoppedOut});
+  }
+
   onResize = (e) => {
     this.project.view.resize();
     this.project.guiElement.draw();
@@ -488,6 +496,19 @@ class Editor extends EditorCore {
 
     this.setState({
       popoutOutlinerSize: this.getSizeHorizontal(domElement)
+    });
+  }
+
+  /**
+   * Called when the console is resized.
+   * @param  {DomElement} domElement DOM element containing the console
+   * @param  {React.Component} component  React component of the console.
+   */
+   onStopConsoleResize = ({domElement, component}) => {
+    if (!domElement) return
+
+    this.setState({
+      consoleSize: this.getSizeHorizontal(domElement)
     });
   }
 
@@ -988,6 +1009,39 @@ class Editor extends EditorCore {
                     {/* Canvas and Popout Outliner */}
                     <ReflexElement>
                       <ReflexContainer windowResizeAware={true} orientation="vertical">
+                        {/* Console Panel */}
+                        {this.state.consolePoppedOut &&
+                          <ReflexElement
+                            size={250}
+                            maxSize={300} minSize={100}
+                            onResize={this.resizeProps.onResize}
+                            onStopResize={this.resizeProps.onStopConsoleResize}>
+                            <ReflexContainer windowResizeAware={true} orientation="vertical">
+                              {/* Outliner */}
+                              <ReflexSplitter {...this.resizeProps} />
+                              <ReflexElement
+                                minSize={100}>
+                                <DockedPanel showOverlay={this.state.previewPlaying}>
+                                  <ConsolePanel
+                                    onScriptUpdate={this.onScriptUpdate}
+                                    editScript={this.editScript}
+                                    toggleCodeEditor={this.toggleCodeEditor}
+                                    requestAutosave={this.requestAutosave}
+                                    clearCodeEditorError={this.clearCodeEditorError}
+                                    consoleLogs={this.state.consoleLogs}
+                                    setConsoleLogs={this.setConsoleLogs}
+                                    renderSize={renderSize}
+                                  />
+                                </DockedPanel>
+                              </ReflexElement>
+                            </ReflexContainer>
+                          </ReflexElement>}
+
+                        {false && this.state.consolePoppedOut &&
+                          !(renderSize === "small") &&
+                          <ReflexSplitter {...this.resizeProps} />
+                        }
+
                         {/*Canvas*/}
                         <ReflexElement {...this.resizeProps}>
                           <DockedPanel>
@@ -1032,6 +1086,11 @@ class Editor extends EditorCore {
                             <OutlinerExpandButton
                               expanded={this.state.outlinerPoppedOut}
                               toggleOutliner={this.toggleOutliner}
+                            />}
+
+                            {renderSize === "large" && <ConsoleExpandButton
+                              expanded={this.state.consolePoppedOut}
+                              toggleConsole={this.toggleConsole}
                             />}
                           </DockedPanel>
                         </ReflexElement>

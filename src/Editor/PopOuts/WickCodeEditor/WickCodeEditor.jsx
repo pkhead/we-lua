@@ -23,7 +23,6 @@ import WickInput from 'Editor/Util/WickInput/WickInput';
 import { Rnd } from 'react-rnd';
 import ActionButton from 'Editor/Util/ActionButton/ActionButton';
 import AddScriptPanel from './AddScriptPanel/AddScriptPanel';
-import { Console } from 'console-feed'
 
 // Import Ace Editor and themes.
 import AceEditor from 'react-ace';
@@ -399,12 +398,14 @@ export default function WickCodeEditor(props) {
               {renderCodeEditor()}
             </ReflexElement>
 
+            {/*
             <ReflexSplitter></ReflexSplitter>
 
             <ReflexElement
               minSize={40}
               size={props.codeEditorWindowProperties.consoleOpen ? props.codeEditorWindowProperties.consoleHeight : 1}
               onStopResize={resizeConsole}>
+
               <div className="wick-code-editor-console">
 
                 <div className="we-code-console-bar">
@@ -451,8 +452,8 @@ export default function WickCodeEditor(props) {
 
                 {consoleType === 'console' && <Console logs={props.consoleLogs} variant="dark"/>}
                 {consoleType === 'options' && renderCodeEditorOptions()}
-              </div>
             </ReflexElement>
+                  </div> */}
           </ReflexContainer>
         </div>
       </div>
