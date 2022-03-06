@@ -10,7 +10,7 @@ export default function ConsolePanel(props) {
     return (
         <div className="wick-code-editor-console">
             <div className="we-code-console-bar">
-                <div className="we-code-console-title">'Console'</div>
+                <div className="outliner-title-name">Console</div>
                 <div className="we-code-console-options-container">
                     <ActionButton
                     className="we-code-console-option we-code-clear-console"

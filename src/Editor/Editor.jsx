@@ -1009,38 +1009,7 @@ class Editor extends EditorCore {
                     {/* Canvas and Popout Outliner */}
                     <ReflexElement>
                       <ReflexContainer windowResizeAware={true} orientation="vertical">
-                        {/* Console Panel */}
-                        {this.state.consolePoppedOut &&
-                          <ReflexElement
-                            size={250}
-                            maxSize={300} minSize={100}
-                            onResize={this.resizeProps.onResize}
-                            onStopResize={this.resizeProps.onStopConsoleResize}>
-                            <ReflexContainer windowResizeAware={true} orientation="vertical">
-                              {/* Outliner */}
-                              <ReflexSplitter {...this.resizeProps} />
-                              <ReflexElement
-                                minSize={100}>
-                                <DockedPanel showOverlay={this.state.previewPlaying}>
-                                  <ConsolePanel
-                                    onScriptUpdate={this.onScriptUpdate}
-                                    editScript={this.editScript}
-                                    toggleCodeEditor={this.toggleCodeEditor}
-                                    requestAutosave={this.requestAutosave}
-                                    clearCodeEditorError={this.clearCodeEditorError}
-                                    consoleLogs={this.state.consoleLogs}
-                                    setConsoleLogs={this.setConsoleLogs}
-                                    renderSize={renderSize}
-                                  />
-                                </DockedPanel>
-                              </ReflexElement>
-                            </ReflexContainer>
-                          </ReflexElement>}
-
-                        {false && this.state.consolePoppedOut &&
-                          !(renderSize === "small") &&
-                          <ReflexSplitter {...this.resizeProps} />
-                        }
+                        
 
                         {/*Canvas*/}
                         <ReflexElement {...this.resizeProps}>
@@ -1088,7 +1057,7 @@ class Editor extends EditorCore {
                               toggleOutliner={this.toggleOutliner}
                             />}
 
-                            {renderSize === "large" && <ConsoleExpandButton
+                            {<ConsoleExpandButton
                               expanded={this.state.consolePoppedOut}
                               toggleConsole={this.toggleConsole}
                             />}
@@ -1096,26 +1065,54 @@ class Editor extends EditorCore {
                         </ReflexElement>
 
                         {/* Popout Outliner */}
-                        {renderSize === "large" && this.state.outlinerPoppedOut && <ReflexSplitter {...this.resizeProps}/>}
-                        {renderSize === "large" && this.state.outlinerPoppedOut && 
+                        {renderSize === "large" && (this.state.consolePoppedOut || this.state.outlinerPoppedOut) && <ReflexSplitter {...this.resizeProps}/>}
+                        {renderSize === "large" && (this.state.consolePoppedOut || this.state.outlinerPoppedOut) && 
                         <ReflexElement
                           size={250}
                           maxSize={300} minSize={200}
                           onResize={this.resizeProps.onResize}
                           onStopResize={this.resizeProps.onStopPopoutOutlinerResize}>
-                          <Outliner 
-                            className="popout-outliner"
-                            project={this.project}
-                            selectObjects={this.selectObjects}
-                            deselectObjects={this.deselectObjects}
-                            clearSelection={this.clearSelection}
-                            editScript={this.editScript}
-                            setFocusObject={this.setFocusObject}
-                            setActiveLayerIndex={this.setActiveLayerIndex}
-                            moveSelection={this.moveSelection}
-                            toggleHidden={this.toggleHidden}
-                            toggleLocked={this.toggleLocked}
-                          />
+                          <ReflexContainer windowResizeAware={true} orientation="horizontal">
+                            {this.state.outlinerPoppedOut &&
+                            <ReflexElement
+                              size={5000}
+                              maxSize={5000} minSize={5}>
+                              <Outliner 
+                                className="popout-outliner"
+                                project={this.project}
+                                selectObjects={this.selectObjects}
+                                deselectObjects={this.deselectObjects}
+                                clearSelection={this.clearSelection}
+                                editScript={this.editScript}
+                                setFocusObject={this.setFocusObject}
+                                setActiveLayerIndex={this.setActiveLayerIndex}
+                                moveSelection={this.moveSelection}
+                                toggleHidden={this.toggleHidden}
+                                toggleLocked={this.toggleLocked}
+                              />
+                            </ReflexElement>}
+
+                            {this.state.consolePoppedOut && this.state.outlinerPoppedOut &&
+                              <ReflexSplitter {...this.resizeProps} />
+                            }
+
+                            {/* Console Panel */}
+                            {this.state.consolePoppedOut &&
+                            <ReflexElement
+                              size={5000}
+                              maxSize={5000} minSize={5}>
+                              <ConsolePanel
+                                onScriptUpdate={this.onScriptUpdate}
+                                editScript={this.editScript}
+                                toggleCodeEditor={this.toggleCodeEditor}
+                                requestAutosave={this.requestAutosave}
+                                clearCodeEditorError={this.clearCodeEditorError}
+                                consoleLogs={this.state.consoleLogs}
+                                setConsoleLogs={this.setConsoleLogs}
+                                renderSize={renderSize}
+                              />
+                            </ReflexElement>}
+                          </ReflexContainer>
                         </ReflexElement>}
                       </ReflexContainer>
                     </ReflexElement>

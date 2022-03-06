@@ -4,8 +4,8 @@ $button-height: 39px;
 
 .console-expand-button {
     position: absolute;
-    top: 35px;
-    left: 0px;
+    top: 35px + $button-height + 10px;
+    right: 0px;
     height: $button-height;
     width: $button-height;
     color: $editor-primary-text;
@@ -15,7 +15,6 @@ $button-height: 39px;
     border-bottom-left-radius: 3px;
     border-right-width: 0;
     transition: background-color 200ms ease-in-out;
-    transform: scale(-1, 1);
 }
 .console-expand-button:hover {
     background-color: $editor-secondary;
