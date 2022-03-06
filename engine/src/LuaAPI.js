@@ -1,5 +1,19 @@
 Lua.onready(function() {
     window.globalLua = new Lua.State();
+
+    // remove io library
+    globalLua.pushNil();
+    globalLua.setGlobal("io");
+
+    // set debug.breakpoint to start JS debugger
+    globalLua.pushGlobal("debug");
+    globalLua.pushString("breakpoint");
+    globalLua.pushFunction(L => {
+        debugger;
+        return 0;
+    });
+    globalLua.setTable(-3);
+    globalLua.pop(1);
 });
 
 // maps objects to lua userdatas

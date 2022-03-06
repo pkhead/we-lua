@@ -23,7 +23,23 @@
 
 Lua.onready(() => {
     luaCreateClass(window.globalLua, "Base", "Tickable", {
+        __func__getClip(L) {
+            var frame = luaGetObject(L, 1, "Clip");
+            if (!frame) return 0;
 
+            var query = L.checkString(2);
+            if (!query) return 0;
+
+            for (let child of frame._children) {
+                if (child instanceof Wick.Clip && child.identifier === query) {
+                    luaWrapObject(L, child);
+                    return 1;
+                }
+            }
+
+            L.pushNil();
+            return 1;
+        }
     });
 });
 
@@ -550,22 +566,36 @@ Wick.Tickable = class extends Wick.Base {
         }));
         lua.setGlobal("stop");
 
-        funcs.push(lua.pushFunction(L => {
-            globalAPI.stop();
-            return 0;
-        }));
-        lua.setGlobal("stop");
-
         funcs.push(lua.pushFunction(function(L) {
-            var num = L.checkInt(1);
-            globalAPI.gotoAndPlay(num);
+            var frame;
+            var type = L.getType(1);
+
+            if (type === Lua.TNUMBER) {
+                frame = L.checkInt(1);
+            } else if (type === Lua.TSTRING) {
+                frame = L.getString(1);
+            } else {
+                L.throwTypeError(1, "integer or string");
+            }
+
+            globalAPI.gotoAndPlay(frame);
             return 0;
         }));
         lua.setGlobal("gotoAndPlay");
 
         funcs.push(lua.pushFunction(function(L) {
-            var num = L.checkInt(1);
-            globalAPI.gotoAndStop(num);
+            var frame;
+            var type = L.getType(1);
+
+            if (type === Lua.TNUMBER) {
+                frame = L.checkInt(1);
+            } else if (type === Lua.TSTRING) {
+                frame = L.getString(1);
+            } else {
+                L.throwTypeError(1, "integer or string");
+            }
+
+            globalAPI.gotoAndStop(frame);
             return 0;
         }));
         lua.setGlobal("gotoAndStop");

@@ -63,6 +63,11 @@ Lua.onready(() => {
         },
         */
 
+        __get__uuid(L) {
+            L.pushString(this.uuid);
+            return 1;
+        },
+
         __get__parent(L) {
             luaWrapObject(L, this.parent);
             return 1;
@@ -407,8 +412,12 @@ Wick.Base = class {
         // Treat empty string identifier as null
         if (identifier === '' || identifier === null) {
             this._identifier = null;
+            
             return;
         }
+
+        /*
+        Not needed as identifiers will be indexed as a string
 
         // Make sure the identifier doesn't squash any attributes of the window
         if (this._identifierNameExistsInWindowContext(identifier)) return;
@@ -424,6 +433,7 @@ Wick.Base = class {
 
         // Make sure the identifier is not a reserved word in js
         if (reserved.check(identifier)) return;
+        */
 
         // Ensure no objects with duplicate identifiers can exist
         this._identifier = this._getUniqueIdentifier(identifier);

@@ -58,16 +58,36 @@ Lua.onready(() => {
             var timeline = luaGetObject(L, 1, "Timeline");
             if (!timeline) return 0;
 
-            var frame = L.checkInt(2);
+            var frame;
+            var type = L.getType(2);
+
+            if (type === Lua.TNUMBER) {
+                frame = L.checkInt(2);
+            } else if (type === Lua.TSTRING) {
+                frame = L.getString(2);
+            } else {
+                L.throwTypeError(2, "integer or string");
+            }
+            
             timeline.gotoAndPlay(frame);
             return 0;
         },
 
-        __func__gotoAndPlay(L) {
+        __func__gotoAndStop(L) {
             var timeline = luaGetObject(L, 1, "Timeline");
             if (!timeline) return 0;
 
-            var frame = L.checkInt(2);
+            var frame;
+            var type = L.getType(2);
+
+            if (type === Lua.TNUMBER) {
+                frame = L.checkInt(2);
+            } else if (type === Lua.TSTRING) {
+                frame = L.getString(2);
+            } else {
+                L.throwTypeError(2, "integer or string");
+            }
+            
             timeline.gotoAndStop(frame);
             return 0;
         },

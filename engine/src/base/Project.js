@@ -1522,8 +1522,6 @@ Wick.Project = class extends Wick.Base {
 
         this.selection.clear();
 
-        this.itemAttributes.clear();
-
         // Start tick loop
         this._tickIntervalID = setInterval(() => {
             args.onBeforeTick();
