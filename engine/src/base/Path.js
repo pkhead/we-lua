@@ -19,7 +19,14 @@
 
 Lua.onready(() => {
     luaCreateClass(window.globalLua, "Base", "Path", {
+        __set__text(L) {
+            this.textContent = L.getString(3);
+        },
 
+        __get__text(L) {
+            L.pushString(this.textContent);
+            return 1;
+        }
     });
 });
 /**

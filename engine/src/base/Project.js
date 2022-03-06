@@ -37,6 +37,38 @@ Lua.onready(() => {
             return 1;
         },
 
+        __get__timeline(L) {
+            luaWrapObject(L, this.activeTimeline);
+            return 1;
+        },
+
+        __set__panX(L) {
+            this.pan.x = L.checkNumber(3);
+        },
+
+        __get__panX(L) {
+            L.pushNumber(this.pan.x);
+            return 1;
+        },
+
+        __set__panY(L) {
+            this.pan.y = L.checkNumber(3);
+        },
+
+        __get__panY(L) {
+            L.pushNumber(this.pan.y);
+            return 1;
+        },
+
+        __set__zoom(L) {
+            this.zoom = L.checkNumber(3);
+        },
+
+        __get__zoom(L) {
+            L.pushNumber(this.zoom);
+            return 1;
+        },
+
         /*
         TODO
         __get__hitTestOptions(L) {
@@ -59,6 +91,9 @@ Wick.Project = class extends Wick.Base {
         super(args);
 
         this.itemAttributes = new Map();
+        this.luaFuncs = [];
+        this.luaScripts = [];
+
         this._name = args.name || 'My Project';
         this._width = args.width || 720;
         this._height = args.height || 480;
@@ -145,6 +180,21 @@ Wick.Project = class extends Wick.Base {
 
         this.history.project = this;
         this.history.pushState(Wick.History.StateType.ONLY_VISIBLE_OBJECTS);
+    }
+
+    luaLoadScript(L, string, name) {
+        L.loadString(string, name);
+        var ref = L.ref();
+        this.luaScripts.push(ref);
+        return ref;
+    }
+
+    luaClearScripts(L) {
+        for (let ref of this.luaScripts) {
+            L.unref(ref);
+        }
+
+        this.luaScripts = [];
     }
 
     /**
@@ -1620,6 +1670,10 @@ Wick.Project = class extends Wick.Base {
         }
 
         this.itemAttributes.clear();
+
+        this.luaClearScripts(window.globalLua);
+
+        this.luaFuncs.forEach(Lua.deallocFunction);
 
         if (this.error) {
             // An error occured.

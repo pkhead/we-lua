@@ -37,7 +37,10 @@ Lua.onready(() => {
             var b = luaGetObject(L, 2, "Clip");
             if (!b) return 0;
 
-            L.pushBoolean(a.hits(b));
+            var hits = a.hits(b);
+            console.log(hits);
+            
+            luaToTable(L, hits);
             return 1;
         },
 

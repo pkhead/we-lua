@@ -91,6 +91,25 @@ Lua.onready(() => {
             timeline.gotoAndStop(frame);
             return 0;
         },
+
+        __func__getFrame(L) {
+            var timeline = luaGetObject(L, 1, "Timeline");
+            if (!timeline) return 0;
+
+            var targetName = L.checkString(2);
+            if (!targetName) return 0;
+
+            for (let layer of timeline.layers) {
+                var frame = layer._children.find(el => el.identifier === targetName);
+                if (frame) {
+                    luaWrapObject(L, frame);
+                    return 1;
+                }
+            }
+
+            L.pushNil();
+            return 1;
+        }
     });
 })
 Wick.Timeline = class extends Wick.Base {

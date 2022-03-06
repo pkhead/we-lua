@@ -24,7 +24,7 @@
 Lua.onready(() => {
     luaCreateClass(window.globalLua, "Base", "Tickable", {
         __func__getClip(L) {
-            var frame = luaGetObject(L, 1, "Clip");
+            var frame = luaGetObject(L, 1, "Tickable");
             if (!frame) return 0;
 
             var query = L.checkString(2);
@@ -39,7 +39,43 @@ Lua.onready(() => {
 
             L.pushNil();
             return 1;
-        }
+        },
+
+        __func__getText(L) {
+            var obj = luaGetObject(L, 1, "Tickable");
+            if (!obj) return 0;
+
+            var query = L.checkString(2);
+            if (!query) return 0;
+
+            for (let child of obj._children) {
+                if (child.identifier === query && child instanceof Wick.Path && child.pathType === "text") {
+                    luaWrapObject(L, child);
+                    return 1;
+                }
+            }
+
+            L.pushNil();
+            return 1;
+        },
+
+        __func__getChild(L) {
+            var obj = luaGetObject(L, 1, "Tickable");
+            if (!obj) return 0;
+
+            var query = L.checkString(2);
+            if (!query) return 0;
+
+            for (let child of obj._children) {
+                if (child.identifier === query) {
+                    luaWrapObject(L, child);
+                    return 1;
+                }
+            }
+
+            L.pushNil();
+            return 1;
+        },
     });
 });
 
@@ -533,39 +569,56 @@ Wick.Tickable = class extends Wick.Base {
         
         return fn*/
         
-        return src;
+        var ref;
+        var n = this.identifier ? this.identifier + ":" + name : name;
+
+        // compile code and store reference to func
+        try {
+            ref = this.project.luaLoadScript(window.globalLua, src, n);
+        } catch(e) {
+            vconsole.error(e.message);
+            error = this._generateErrorInfo(e, name);
+        }
+
+        return ref;
     }
 
     _initLuaState(lua, globalAPI, params, thisScope) {
         Lua.onprint = vconsole.log;
         Lua.onprinterr = vconsole.error;
 
+        //var funcs = this.project.luaFuncs;
         var funcs = [];
-
+        
+        // gotoNextFrame()
         funcs.push(lua.pushFunction(function(L) {
             globalAPI.gotoNextFrame();
             return 0;
         }));
         lua.setGlobal("gotoNextFrame");
 
+        // gotoPrevFrame()
         funcs.push(lua.pushFunction(function(L) {
             globalAPI.gotoPrevFrame();
             return 0;
         }));
         lua.setGlobal("gotoPrevFrame");
 
+        // play()
         funcs.push(lua.pushFunction(function(L) {
             globalAPI.play();
             return 0;
         }));
         lua.setGlobal("play");
 
+        // stop()
         funcs.push(lua.pushFunction(function(L) {
             globalAPI.stop();
             return 0;
         }));
         lua.setGlobal("stop");
 
+        // gotoAndPlay()
         funcs.push(lua.pushFunction(function(L) {
             var frame;
             var type = L.getType(1);
@@ -583,6 +636,7 @@ Wick.Tickable = class extends Wick.Base {
         }));
         lua.setGlobal("gotoAndPlay");
 
+        // gotoAndStop()
         funcs.push(lua.pushFunction(function(L) {
             var frame;
             var type = L.getType(1);
@@ -600,36 +654,42 @@ Wick.Tickable = class extends Wick.Base {
         }));
         lua.setGlobal("gotoAndStop");
 
+        // mouseX()
         funcs.push(lua.pushFunction(L => {
             L.pushNumber(globalAPI.mouseX);
             return 1;
         }));
         lua.setGlobal("mouseX");
 
+        // mouseY()
         funcs.push(lua.pushFunction(L => {
             L.pushNumber(globalAPI.mouseY);
             return 1;
         }));
         lua.setGlobal("mouseY");
 
+        // mouseMoveX()
         funcs.push(lua.pushFunction(L => {
             L.pushNumber(globalAPI.mouseMoveX);
             return 1;
         }));
         lua.setGlobal("mouseMoveX");
 
+        // mouseMoveY()
         funcs.push(lua.pushFunction(L => {
             L.pushNumber(globalAPI.mouseMoveY);
             return 1;
         }));
         lua.setGlobal("mouseMoveY");
 
+        // isMouseDown()
         funcs.push(lua.pushFunction(L => {
             L.pushBoolean(globalAPI.isMouseDown());
             return 1;
         }));
         lua.setGlobal("isMouseDown");
 
+        // isKeyDown()
         funcs.push(lua.pushFunction(L => {
             var k = L.checkString(1);
             L.pushBoolean(globalAPI.isKeyDown(k));
@@ -637,6 +697,7 @@ Wick.Tickable = class extends Wick.Base {
         }));
         lua.setGlobal("isKeyDown");
 
+        // isKeyJustPressed()
         funcs.push(lua.pushFunction(L => {
             var k = L.checkString(1);
             L.pushBoolean(globalAPI.isKeyJustPressed(k));
@@ -644,18 +705,21 @@ Wick.Tickable = class extends Wick.Base {
         }));
         lua.setGlobal("isKeyJustPressed");
 
+        // hideCursor()
         funcs.push(lua.pushFunction(L => {
             globalAPI.hideCursor();
             return 0;
         }));
         lua.setGlobal("hideCursor");
 
+        // showCursor()
         funcs.push(lua.pushFunction(L => {
             globalAPI.showCursor();
             return 0;
         }));
         lua.setGlobal("showCursor");
 
+        // playSound()
         funcs.push(lua.pushFunction(L => {
             var name = L.checkString(1);
 
@@ -699,6 +763,7 @@ Wick.Tickable = class extends Wick.Base {
         }));
         lua.setGlobal("playSound");
 
+        // stopSound()
         funcs.push(lua.pushFunction(L => {
             var name = L.checkString(1);
             var id;
@@ -712,9 +777,29 @@ Wick.Tickable = class extends Wick.Base {
         }));
         lua.setGlobal("stopSound");
 
+        // getClip()
+        var parentFrame = this.parentFrame;
+        funcs.push(lua.pushFunction(L => {
+            var query = L.checkString(1);
+            if (!query) return 0;
+
+            luaWrapObject(L, parentFrame._children.find(v => v instanceof Wick.Clip && v.identifier === query));
+            return 1;
+        }));
+        lua.setGlobal("getClip");
+
+        // time()
+        funcs.push(lua.pushFunction(L => {
+            L.pushNumber(Date.now() / 1000)
+            return 1;
+        }));
+        lua.setGlobal("time");
+
+        // self
         luaWrapObject(lua, this);
         lua.setGlobal("self");
 
+        // project
         luaWrapObject(lua, this.project);
         lua.setGlobal("project");
 
@@ -802,7 +887,7 @@ Wick.Tickable = class extends Wick.Base {
           var funcs = this._initLuaState(lua, globalAPI, parameters, thisScope);
 
           try {
-              lua.loadString(fn, name);
+              lua.pushRef(fn);
               lua.runFunc(null, 0);
               //fn.bind(thisScope)();
           } catch (e) {

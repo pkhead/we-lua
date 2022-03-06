@@ -99,6 +99,15 @@ Lua.onready(() => {
             return 1;
         },
 
+        __func__isA(L) {
+            var className = L.getString(2);
+            if (!className) return 0;
+
+            var res = luaIsA(L, 1, className);
+            L.pushBoolean(res);
+            return 1;
+        },
+
         // this property stores a reference to a Lua table that is unique per Wick instance
         __get__attrs(L) {
             var item = luaGetObject(L, 1, "Base");

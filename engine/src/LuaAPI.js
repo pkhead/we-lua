@@ -79,7 +79,7 @@ function luaMetafield(L, i, k) {
 }
 
 function luaIsA(L, i, targetClass) {
-    if (L.getType(1) !== Lua.TUSERDATA) return false;
+    if (L.getType(i) !== Lua.TUSERDATA) return false;
     if (L.getMetatable(i) === 0) return false;
 
     L.pushString("__name");
@@ -89,7 +89,7 @@ function luaIsA(L, i, targetClass) {
 
     L.pop(2);
 
-    while (className === targetClass) {
+    while (className !== targetClass) {
         className = luaClassSupers[className];
         if (!className) return false;
     }
@@ -109,7 +109,7 @@ function luaGetObject(L, i, classname) {
         return null;
     }
 
-    var self = L.getUserdata(1);
+    var self = L.getUserdata(i);
 
     if (!self) {
         L.throwError("unknown exception");
@@ -117,6 +117,48 @@ function luaGetObject(L, i, classname) {
     }
 
     return window.project.getObjectByUUID(self.uuid);
+}
+
+/**
+ * Utility function to convert JS Object to Lua table, and put it on stack
+ * @param {Lua.State} L The Lua.State
+ * @param {object} source The JS object to convert
+ */
+function luaToTable(L, source) {
+    if (!source) {
+        L.pushNil();
+        return;
+    }
+
+    L.createTable();
+
+    for (let k in source) {
+        let v = source[k];
+
+        L.pushString(k.toString());
+
+        if (v instanceof Wick.Base) {
+            luaWrapObject(L, v);
+        } else {
+            switch(typeof v) {
+                case "number":
+                    L.pushNumber(v);
+                    break;
+                case "string":
+                    L.pushString(v);
+                    break;
+                case "boolean":
+                    L.pushBoolean(v);
+                    break;
+                case "object":
+                    console.warn("Converting unknown object type");
+                    luaToTable(L, v);
+                    break;
+            }
+        }
+
+        L.setTable(-3);
+    }
 }
 
 /**
@@ -155,32 +197,38 @@ function luaCreateClass(L, superName, className, fields) {
     if (superName) {
         let superHandlers = luaClassHandlers[superName]; 
 
-        handlers.index = (L, item, index) => {
+        handlers.index = (L, index) => {
             if (("__func__" + index) in funcs) {
                 L.pushRef(funcs["__func__" + index]);
                 return 1;
             } else if (("__get__" + index) in fields) {
+                let item = luaGetObject(L, 1, className);
+                if (!item) return 0;
                 return fields["__get__" + index].call(item, L);
             } else {
-                return superHandlers.index(L, item, index);
+                return superHandlers.index(L, index);
             }
         };
 
-        handlers.newindex = (L, item, index) => {
+        handlers.newindex = (L, index) => {
             if (index in fields) {
+                let item = luaGetObject(L, 1, className);
+                if (!item) return 0;
                 fields[index].call(item, L);
             } else {
-                superHandlers.newindex(L, item, index);
+                superHandlers.newindex(L, index);
             }
 
             return 0;
         };
     } else {
-        handlers.index = (L, item, index) => {
+        handlers.index = (L, index) => {
             if (("__func__" + index) in funcs) {
                 L.pushRef(funcs["__func__" + index]);
                 return 1;
             } else if (("__get__" + index) in fields) {
+                let item = luaGetObject(L, 1, className);
+                if (!item) return 0;
                 return fields["__get__" + index].call(item, L);
             } else {
                 L.throwError(`attempt to access nil field "${index}"`);
@@ -188,8 +236,10 @@ function luaCreateClass(L, superName, className, fields) {
             }
         };
 
-        handlers.newindex = (L, item, index) => {
+        handlers.newindex = (L, index) => {
             if (index in fields) {
+                let item = luaGetObject(L, 1, className);
+                if (!item) return 0;
                 fields[index].call(item, L);
             } else {
                 L.throwError(`attempt to access nil field ${index}`);
@@ -204,22 +254,18 @@ function luaCreateClass(L, superName, className, fields) {
     // wrap the index handler to the lua metatable
     L.pushString("__index");
     L.pushFunction(L => {
-        var item = luaGetObject(L, 1, className);
-        if (!item) return 0;
         var index = L.getString(2);
         
-        return handlers.index(L, item, index);
+        return handlers.index(L, index);
     });
     L.setTable(-3);
 
     // wrap the newindex handler to the lua metatable
     L.pushString("__newindex");
     L.pushFunction(L => {
-        var item = luaGetObject(L, 1, className);
-        if (!item) return 0;
         var index = L.getString(2);
 
-        handlers.newindex(L, item, "__set__" + index);
+        handlers.newindex(L, "__set__" + index);
         return 0;
     });
     L.setTable(-3);
