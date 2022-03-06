@@ -521,8 +521,8 @@ Wick.Tickable = class extends Wick.Base {
     }
 
     _initLuaState(lua, globalAPI, params, thisScope) {
-        Lua.onprint = console.log;
-        Lua.onprinterr = console.error;
+        Lua.onprint = vconsole.log;
+        Lua.onprinterr = vconsole.error;
 
         var funcs = [];
 
@@ -777,7 +777,7 @@ Wick.Tickable = class extends Wick.Base {
               //fn.bind(thisScope)();
           } catch (e) {
               // Catch runtime errors
-              console.error(e);
+              vconsole.error(e.message);
               error = this._generateErrorInfo(e, name);
           }
 
@@ -804,15 +804,20 @@ Wick.Tickable = class extends Wick.Base {
     _generateErrorInfo (error, name) {
         if(Wick.Tickable.LOG_ERRORS) console.log(error);
 
+        // error messages go like this: [string "script_name"]:(line number): ..."
+        // line numbers come after the closing bracket and between the two colons
+        var lineno = +(error.message.split("]")[1].split(":")[1]);
+
         return {
             name: name !== undefined ? name : '',
-            lineNumber: this._generateLineNumberFromStackTrace(error.stack),
+            lineNumber: lineno,
             message: error.message,
             uuid: this.isClone ? this.sourceClipUUID : this.uuid,
         }
     }
 
     _generateEsprimaErrorInfo (error, name) {
+        /*
         if(Wick.Tickable.LOG_ERRORS) console.log(error);
 
         return {
@@ -821,6 +826,8 @@ Wick.Tickable = class extends Wick.Base {
             message: error.description,
             uuid: this.uuid,
         }
+        */
+       return this._generateErrorInfo(error, name);
     }
 
     _generateLineNumberFromStackTrace (trace) {

@@ -24,6 +24,13 @@ import Editor from './Editor/Editor';
 import * as serviceWorker from './serviceWorker';
 import initializeDefaultFileHandlers from './files/filehandler';
 
+// virtual console, used to display messages in the console component
+window.vconsole = {
+    log: console.log,
+    error: console.error,
+    warn: console.warn
+};
+
 // Creates file handlers in the window.
 initializeDefaultFileHandlers();
 
