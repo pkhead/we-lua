@@ -26,42 +26,9 @@ Lua.onready(() => {
         gc(L) {
             console.log("__gc");
 
-            //console.log("__gc");
-            
-            /*
-            L.pushString("__name");
-            L.getTable(1);
-            console.log(L.getString(-1));
-
-            var self = L.getUserdata(1);
-            var js_obj = luaUserdata.get(self);
-
-            luaUserdata.delete(self);
-            luaWrappers.delete(js_obj);
-            */
-
-            var self = L.getUserdata(1);
+            var self = L.getUserdata(1, "WickObject");
             luaDeleteWrapper(L, self);
         },
-
-        /*
-        eq(L) {
-            if (!luaIsA(L, 1, "Base")) {
-                L.throwTypeError(1, "Base");
-                return 0;
-            }
-    
-            if (!luaIsA(L, 2, "Base")) {
-                L.throwTypeError(1, "Base");
-                return 0;
-            }
-    
-            var ud1 = L.getUserdata(1);
-            var ud2 = L.getUserdata(2);
-            
-            return ud1.uuid === ud2.uuid;
-        },
-        */
 
         __get__uuid(L) {
             L.pushString(this.uuid);

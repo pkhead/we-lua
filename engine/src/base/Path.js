@@ -26,7 +26,7 @@ Lua.onready(() => {
         __get__text(L) {
             L.pushString(this.textContent);
             return 1;
-        }
+        },
     });
 });
 /**

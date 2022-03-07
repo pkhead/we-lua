@@ -1,5 +1,5 @@
 Lua.onready(function() {
-    window.globalLua = new Lua.State();
+    window.globalLua = Lua.createState();
 
     // remove io library
     globalLua.pushNil();
@@ -15,6 +15,15 @@ Lua.onready(function() {
     globalLua.setTable(-3);
     globalLua.pop(1);
 });
+
+// define WickObject struct
+(function() {
+    var uuidLen = uuidv4().length;
+    Lua.defineUserdata("WickObject", {
+        uuid: `string${uuidLen}`,
+        ref: "int"
+    });
+})();
 
 // maps objects to lua userdatas
 var luaWrappers = new Map();
@@ -42,10 +51,7 @@ function luaWrapObject(L, obj) {
             return ud;
         }
 
-        ud = L.createUserdata({
-            uuid: `string${obj.uuid.length}`,
-            ref: "int"
-        });
+        ud = L.createUserdata("WickObject");
         ud.uuid = obj.uuid;
 
         L.pushFromStack(-1);
@@ -69,7 +75,6 @@ function luaDeleteWrapper(L, ud) {
     L.unref(ud.ref);
     var obj = window.project.getObjectByUUID(ud.uuid);
     luaWrappers.delete(obj);
-    L.unlinkUserdata(ud);
 }
 
 function luaMetafield(L, i, k) {
@@ -109,7 +114,7 @@ function luaGetObject(L, i, classname) {
         return null;
     }
 
-    var self = L.getUserdata(i);
+    var self = L.getUserdata(i, "WickObject");
 
     if (!self) {
         L.throwError("unknown exception");

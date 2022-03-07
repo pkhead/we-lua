@@ -1673,7 +1673,7 @@ Wick.Project = class extends Wick.Base {
 
         this.luaClearScripts(window.globalLua);
 
-        this.luaFuncs.forEach(Lua.deallocFunction);
+        this.luaFuncs.forEach(Lua.unregisterFunc);
 
         if (this.error) {
             // An error occured.
