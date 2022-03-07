@@ -22,6 +22,7 @@ gulp-build.sh
 .env.test.local
 .env.production.local
 .env
+.vscode
 
 npm-debug.log*
 yarn-debug.log*
