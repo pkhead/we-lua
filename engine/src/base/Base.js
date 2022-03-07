@@ -23,11 +23,21 @@
 Lua.onready(() => {
     luaCreateClass(window.globalLua, null, "Base",
     {
+        /*
         gc(L) {
-            console.log("__gc");
-
             var self = L.getUserdata(1, "WickObject");
             luaDeleteWrapper(L, self);
+        },
+        */
+       
+        __eq(L) {
+            var a = luaGetObject(L, 1, "Base");
+            if (!a) return 0;
+            var b = luaGetObject(L, 2, "Base");
+            if (!b) return 0;
+
+            L.pushBoolean(a === b);
+            return 1;
         },
 
         __get__uuid(L) {

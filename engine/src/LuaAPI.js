@@ -44,23 +44,23 @@ function luaWrapObject(L, obj) {
         L.pushNil();
         return null;
     } else {
-        var ud = luaWrappers.get(obj);
+        /*var ud = luaWrappers.get(obj);
 
         if (ud) {
-            L.pushRef(ud.ref);
+            //L.pushRef(ud.ref);
             return ud;
-        }
+        }*/
 
-        ud = L.createUserdata("WickObject");
+        var ud = L.createUserdata("WickObject");
         ud.uuid = obj.uuid;
 
-        L.pushFromStack(-1);
-        ud.ref = L.ref();
+        //L.pushFromStack(-1);
+        //ud.ref = L.ref();
 
         L.pushMetatable(obj._classname);
         L.setMetatable(-2);
 
-        luaWrappers.set(obj, ud);
+        //luaWrappers.set(obj, ud);
 
         return ud;
     }
@@ -71,11 +71,12 @@ function luaWrapObject(L, obj) {
  * @param {Lua.State} L The Lua.State
  * @param {Wick.Base} obj The Wick object that is wrapped 
  */
+/*
 function luaDeleteWrapper(L, ud) {
-    L.unref(ud.ref);
     var obj = window.project.getObjectByUUID(ud.uuid);
     luaWrappers.delete(obj);
 }
+*/
 
 function luaMetafield(L, i, k) {
     L.getMetatable(i);
