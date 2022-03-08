@@ -27,7 +27,7 @@ Lua.onready(() => {
             var frame = luaGetObject(L, 1, "Tickable");
             if (!frame) return 0;
 
-            var query = L.checkString(2);
+            var query = Lua.checkString(L, 2);
             if (!query) return 0;
 
             for (let child of frame._children) {
@@ -37,7 +37,7 @@ Lua.onready(() => {
                 }
             }
 
-            L.pushNil();
+            Lua.pushNil(L);
             return 1;
         },
 
@@ -45,7 +45,7 @@ Lua.onready(() => {
             var obj = luaGetObject(L, 1, "Tickable");
             if (!obj) return 0;
 
-            var query = L.checkString(2);
+            var query = Lua.checkString(L, 2);
             if (!query) return 0;
 
             for (let child of obj._children) {
@@ -55,7 +55,7 @@ Lua.onready(() => {
                 }
             }
 
-            L.pushNil();
+            Lua.pushNil(L);
             return 1;
         },
 
@@ -63,7 +63,7 @@ Lua.onready(() => {
             var obj = luaGetObject(L, 1, "Tickable");
             if (!obj) return 0;
 
-            var query = L.checkString(2);
+            var query = Lua.checkString(L, 2);
             if (!query) return 0;
 
             for (let child of obj._children) {
@@ -73,7 +73,7 @@ Lua.onready(() => {
                 }
             }
 
-            L.pushNil();
+            Lua.pushNil(L);
             return 1;
         },
     });
@@ -413,13 +413,13 @@ Wick.Tickable = class extends Wick.Base {
         // Run function inside tab
         if(this.scriptIsContentful(name)) {
             var script = this.getScript(name);
-            var fn = this._cachedScripts[name] || this._evalScript(name, script.src);
+            var fn = this._cachedScripts[name] || this._evalScript(name, script.src, parameters);
             if(fn == null) {
                 return fn; // error
             }
 
             this._cachedScripts[name] = fn;
-            var error = this._runFunction(fn, name, parameters);
+            var error = this._runFunction(fn, name);
 
             if (error && this.project) {
                 this.project.error = error;
@@ -545,7 +545,7 @@ Wick.Tickable = class extends Wick.Base {
         this.scheduleScript('unload');
     }
 
-    _evalScript (name, src) {
+    _evalScript (name, src, params) {
         /*
         var fn = null;
 
@@ -569,260 +569,302 @@ Wick.Tickable = class extends Wick.Base {
         
         return fn*/
         
-        var ref;
+        var success = false;
         var n = this.identifier ? this.identifier + ":" + name : name;
 
         // compile code and store reference to func
         try {
-            ref = this.project.luaLoadScript(window.globalLua, src, n);
+            Lua.loadString(window.globalLua, src, n);
+            success = true;
         } catch(e) {
             vconsole.error(e.message);
             error = this._generateErrorInfo(e, name);
         }
-
-        return ref;
+        
+        if (success) {
+            // function should be top on stack
+            // create environment
+            this._initLuaEnviron(window.globalLua, params);
+            var ref = this.project.luaSaveScript(window.globalLua);
+            return ref;
+        } else {
+            return null;
+        }
     }
 
-    _initLuaState(lua, globalAPI, params, thisScope) {
+    _initLuaEnviron(lua, params) {
         Lua.onprint = vconsole.log;
         Lua.onprinterr = vconsole.error;
 
-        //var funcs = this.project.luaFuncs;
-        var funcs = [];
+        var globalAPI = new GlobalAPI(this);
+
+        // copy global environment
+        Lua.pushGlobalTable(lua);
+        luaCopyTable(lua, -1);
+
+        var funcs = this.project.luaFuncs;
 
         // gotoNextFrame()
-        funcs.push(lua.pushFunction(function(L) {
+        Lua.pushString(lua, "gotoNextFrame");
+        funcs.push(Lua.pushFunction(lua, function(L) {
             globalAPI.gotoNextFrame();
             return 0;
         }));
-        lua.setGlobal("gotoNextFrame");
+        Lua.setTable(lua, -3);
 
         // gotoPrevFrame()
-        funcs.push(lua.pushFunction(function(L) {
+        Lua.pushString(lua, "gotoPrevFrame");
+        funcs.push(Lua.pushFunction(lua, function(L) {
             globalAPI.gotoPrevFrame();
             return 0;
         }));
-        lua.setGlobal("gotoPrevFrame");
+        Lua.setTable(lua, -3);
 
         // play()
-        funcs.push(lua.pushFunction(function(L) {
+        Lua.pushString(lua, "play");
+        funcs.push(Lua.pushFunction(lua, function(L) {
             globalAPI.play();
             return 0;
         }));
-        lua.setGlobal("play");
+        Lua.setTable(lua, -3);
 
         // stop()
-        funcs.push(lua.pushFunction(function(L) {
+        Lua.pushString(lua, "stop");
+        funcs.push(Lua.pushFunction(lua, function(L) {
             globalAPI.stop();
             return 0;
         }));
-        lua.setGlobal("stop");
+        Lua.setTable(lua, -3);
 
         // gotoAndPlay()
-        funcs.push(lua.pushFunction(function(L) {
+        Lua.pushString(lua, "gotoAndPlay");
+        funcs.push(Lua.pushFunction(lua, function(L) {
             var frame;
-            var type = L.getType(1);
+            var type = Lua.getType(L, 1);
 
             if (type === Lua.TNUMBER) {
-                frame = L.checkInt(1);
+                frame = Lua.checkInt(L, 1);
             } else if (type === Lua.TSTRING) {
-                frame = L.getString(1);
+                frame = Lua.getString(L, 1);
             } else {
-                L.throwTypeError(1, "integer or string");
+                Lua.throwTypeError(L, 1, "integer or string");
             }
 
             globalAPI.gotoAndPlay(frame);
             return 0;
         }));
-        lua.setGlobal("gotoAndPlay");
+        Lua.setTable(lua, -3);
 
         // gotoAndStop()
-        funcs.push(lua.pushFunction(function(L) {
+        Lua.pushString(lua, "gotoAndStop");
+        funcs.push(Lua.pushFunction(lua, function(L) {
             var frame;
-            var type = L.getType(1);
+            var type = Lua.getType(L, 1);
 
             if (type === Lua.TNUMBER) {
-                frame = L.checkInt(1);
+                frame = Lua.checkInt(L, 1);
             } else if (type === Lua.TSTRING) {
-                frame = L.getString(1);
+                frame = Lua.getString(L, 1);
             } else {
-                L.throwTypeError(1, "integer or string");
+                Lua.throwTypeError(L, 1, "integer or string");
             }
 
             globalAPI.gotoAndStop(frame);
             return 0;
         }));
-        lua.setGlobal("gotoAndStop");
+        Lua.setTable(lua, -3);
 
         // mouseX()
-        funcs.push(lua.pushFunction(L => {
-            L.pushNumber(globalAPI.mouseX);
+        Lua.pushString(lua, "mouseX");
+        funcs.push(Lua.pushFunction(lua, L => {
+            Lua.pushNumber(L, globalAPI.mouseX);
             return 1;
         }));
-        lua.setGlobal("mouseX");
+        Lua.setTable(lua, -3);
 
         // mouseY()
-        funcs.push(lua.pushFunction(L => {
-            L.pushNumber(globalAPI.mouseY);
+        Lua.pushString(lua, "mouseY");
+        funcs.push(Lua.pushFunction(lua, L => {
+            Lua.pushNumber(L, globalAPI.mouseY);
             return 1;
         }));
-        lua.setGlobal("mouseY");
+        Lua.setTable(lua, -3);
 
         // mouseMoveX()
-        funcs.push(lua.pushFunction(L => {
-            L.pushNumber(globalAPI.mouseMoveX);
+        Lua.pushString(lua, "mouseMoveX");
+        funcs.push(Lua.pushFunction(lua, L => {
+            Lua.pushNumber(L, globalAPI.mouseMoveX);
             return 1;
         }));
-        lua.setGlobal("mouseMoveX");
+        Lua.setTable(lua, -3);
 
         // mouseMoveY()
-        funcs.push(lua.pushFunction(L => {
-            L.pushNumber(globalAPI.mouseMoveY);
+        Lua.pushString(lua, "mouseMoveY");
+        funcs.push(Lua.pushFunction(lua, L => {
+            Lua.pushNumber(L, globalAPI.mouseMoveY);
             return 1;
         }));
-        lua.setGlobal("mouseMoveY");
+        Lua.setTable(lua, -3);
 
         // isMouseDown()
-        funcs.push(lua.pushFunction(L => {
-            L.pushBoolean(globalAPI.isMouseDown());
+        Lua.pushString(lua, "isMouseDown");
+        funcs.push(Lua.pushFunction(lua, L => {
+            Lua.pushBoolean(L, globalAPI.isMouseDown());
             return 1;
         }));
-        lua.setGlobal("isMouseDown");
+        Lua.setTable(lua, -3);
 
         // isKeyDown()
-        funcs.push(lua.pushFunction(L => {
-            var k = L.checkString(1);
-            L.pushBoolean(globalAPI.isKeyDown(k));
+        Lua.pushString(lua, "isKeyDown");
+        funcs.push(Lua.pushFunction(lua, L => {
+            var k = Lua.checkString(L, 1);
+            Lua.pushBoolean(L, globalAPI.isKeyDown(k));
             return 1;
         }));
-        lua.setGlobal("isKeyDown");
+        Lua.setTable(lua, -3);
 
         // isKeyJustPressed()
-        funcs.push(lua.pushFunction(L => {
-            var k = L.checkString(1);
-            L.pushBoolean(globalAPI.isKeyJustPressed(k));
+        Lua.pushString(lua, "isKeyJustPressed");
+        funcs.push(Lua.pushFunction(lua, L => {
+            var k = Lua.checkString(L, 1);
+            Lua.pushBoolean(L, globalAPI.isKeyJustPressed(k));
             return 1;
         }));
-        lua.setGlobal("isKeyJustPressed");
+        Lua.setTable(lua, -3);
 
         // hideCursor()
-        funcs.push(lua.pushFunction(L => {
+        Lua.pushString(lua, "hideCursor");
+        funcs.push(Lua.pushFunction(lua, L => {
             globalAPI.hideCursor();
             return 0;
         }));
-        lua.setGlobal("hideCursor");
+        Lua.setTable(lua, -3);
 
         // showCursor()
-        funcs.push(lua.pushFunction(L => {
+        Lua.pushString(lua, "showCursor");
+        funcs.push(Lua.pushFunction(lua, L => {
             globalAPI.showCursor();
             return 0;
         }));
-        lua.setGlobal("showCursor");
+        Lua.setTable(lua, -3);
 
         // playSound()
-        funcs.push(lua.pushFunction(L => {
-            var name = L.checkString(1);
+        Lua.pushString(lua, "playSound");
+        funcs.push(Lua.pushFunction(lua, L => {
+            var name = Lua.checkString(L, 1);
 
             var options;
 
-            if (L.getType(2) !== Lua.TNONE) {
-                if (!L.isTable(2)) {
-                    L.throwTypeError(2, "table");
+            if (Lua.getType(L, 2) !== Lua.TNONE) {
+                if (!Lua.isTable(L, 2)) {
+                    Lua.throwTypeError(L, 2, "table");
                     return 0;
                 }
 
                 options = {};
 
-                L.pushString("seekMS");
-                L.getTable(2);
+                Lua.pushString(L, "seekMS");
+                Lua.getTable(L, 2);
 
-                if (!L.isNil(-1)) {
-                    options.seekMS = L.checkNumber(-1);
+                if (!Lua.isNil(L, -1)) {
+                    options.seekMS = Lua.checkNumber(L, -1);
                 }
 
-                L.pushString("volume");
-                L.getTable(2);
+                Lua.pushString(L, "volume");
+                Lua.getTable(L, 2);
 
-                if (!L.isNil(-1)) {
-                    options.volume = L.checkNumber(-1);
+                if (!Lua.isNil(L, -1)) {
+                    options.volume = Lua.checkNumber(L, -1);
                 }
 
-                L.pushString("loop");
-                L.getTable(2);
+                Lua.pushString(L, "loop");
+                Lua.getTable(L, 2);
 
-                if (!L.isNil(-1)) {
-                    options.loop = L.getBoolean(-1);
+                if (!Lua.isNil(L, -1)) {
+                    options.loop = Lua.getBoolean(L, -1);
                 }
 
-                L.pop(3);
+                Lua.pop(L, 3);
             }
 
             var id = globalAPI.playSound(name, options);
-            L.pushInt(id);
+            Lua.pushInt(L, id);
             return 1;
         }));
-        lua.setGlobal("playSound");
+        Lua.setTable(lua, -3);
 
         // stopSound()
-        funcs.push(lua.pushFunction(L => {
-            var name = L.checkString(1);
+        Lua.pushString(lua, "stopSound");
+        funcs.push(Lua.pushFunction(lua, L => {
+            var name = Lua.checkString(L, 1);
             var id;
 
-            if (L.getType(2) !== Lua.TNONE) {
-                id = L.checkInt(2);
+            if (Lua.getType(L, 2) !== Lua.TNONE) {
+                id = Lua.checkInt(L, 2);
             }
 
             globalAPI.stopSound(name, id);
             return 0;
         }));
-        lua.setGlobal("stopSound");
+        Lua.setTable(lua, -3);
 
         // getClip()
         var parentFrame = this.parentFrame;
-        funcs.push(lua.pushFunction(L => {
-            var query = L.checkString(1);
+        Lua.pushString(lua, "getClip");
+        funcs.push(Lua.pushFunction(lua, L => {
+            var query = Lua.checkString(L, 1);
             if (!query) return 0;
 
             luaWrapObject(L, parentFrame._children.find(v => v instanceof Wick.Clip && v.identifier === query));
             return 1;
         }));
-        lua.setGlobal("getClip");
+        Lua.setTable(lua, -3);
 
         // time()
-        funcs.push(lua.pushFunction(L => {
-            L.pushNumber(Date.now() / 1000)
+        Lua.pushString(lua, "time");
+        funcs.push(Lua.pushFunction(lua, L => {
+            Lua.pushNumber(L, Date.now() / 1000)
             return 1;
         }));
-        lua.setGlobal("time");
+        Lua.setTable(lua, -3);
 
         // self
+        Lua.pushString(lua, "self");
         luaWrapObject(lua, this);
-        lua.setGlobal("self");
+        Lua.setTable(lua, -3);
 
-        // project
-        luaWrapObject(lua, this.project);
-        lua.setGlobal("project");
+        // project (TODO make global)
+        // luaWrapObject(lua, this.project);
+        // Lua.setGlobal(lua, "project");
 
         if (params) {
             for (let paramName in params) {
+                Lua.pushString(lua, paramName);
+                
                 let paramVal = params[paramName];
 
                 switch(typeof(paramVal)) {
                     case "string":
-                        lua.pushString(paramVal);
+                        Lua.pushString(lua, paramVal);
                         break;
                     case "number":
-                        lua.pushNumber(paramVal);
+                        Lua.pushNumber(lua, paramVal);
                         break;
                     default:
                         console.warn(`will not push param ${paramName}: ${typeof(paramVal)}`);
-                        lua.pushNil();
+                        Lua.pushNil(lua);
                         break;
                 }
 
-                lua.setGlobal(paramName);
+                Lua.setTable(lua, -3);
             }
         }
+
+        // STACK: function global_env script_env
+        Lua.setUpvalue(lua, -3, 1); // upvalue 1 = function environment
+        // STACK: function global_env
+        Lua.pop(lua, 1);
+        // STACK: function
 
         return funcs;
     }
@@ -837,7 +879,9 @@ Wick.Tickable = class extends Wick.Base {
           var error = null;
 
           // Attach API methods
-          var globalAPI = new GlobalAPI(this);
+          // var globalAPI = new GlobalAPI(this);
+
+          /*
           var otherObjects = this.parentClip ? this.parentClip.activeNamedChildren : [];
           var apiMembers = globalAPI.apiMembers.concat(otherObjects.map(otherObject => {
               return {
@@ -855,6 +899,7 @@ Wick.Tickable = class extends Wick.Base {
                 })
             });
           }
+          */
 
           /*
           apiMembers.forEach(apiMember => {
@@ -864,7 +909,7 @@ Wick.Tickable = class extends Wick.Base {
 
           // These are currently hacked in here for performance reasons...
           var project = this.project;
-          var root = project && project.root;
+          //var root = project && project.root;
 
           /*
           window.project = root;
@@ -880,24 +925,21 @@ Wick.Tickable = class extends Wick.Base {
           */
 
           // what kinda oop is this?
-          var thisScope = this instanceof Wick.Frame ? this.parent : this;
+          //var thisScope = this instanceof Wick.Frame ? this.parent : this;
 
           // Run the function
-          var lua = window.globalLua.fork();
-          var funcs = this._initLuaState(lua, globalAPI, parameters, thisScope);
+          //var lua = Lua.fork(window.globalLua);
+          //var funcs = this._initLuaState(lua, globalAPI, parameters);
 
           try {
-              lua.pushRef(fn);
-              lua.runFunc(null, 0);
+              Lua.pushRef(window.globalLua, fn);
+              Lua.runFunc(window.globalLua, null, 0);
               //fn.bind(thisScope)();
           } catch (e) {
               // Catch runtime errors
               vconsole.error(e.message);
               error = this._generateErrorInfo(e, name);
           }
-
-          funcs.forEach(Lua.unregisterFunc);
-          window.globalLua.pop(1); // pop the thread from the stack to be garbage collected
 
           // These are currently hacked in here for performance reasons...
           //delete window.project;

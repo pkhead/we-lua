@@ -23,12 +23,12 @@
 Lua.onready(() => {
     luaCreateClass(window.globalLua, "Tickable", "Frame", {
         __get__currentFrameName(L) {
-            L.pushString(this.currentFrameName);
+            Lua.pushString(L, this.currentFrameName);
             return 1;
         },
 
         __get__currentFrameNumber(L) {
-            L.pushInt(this.currentFrameNumber);
+            Lua.pushInt(L, this.currentFrameNumber);
             return 1;
         },
     });

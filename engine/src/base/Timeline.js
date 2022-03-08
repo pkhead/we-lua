@@ -59,14 +59,14 @@ Lua.onready(() => {
             if (!timeline) return 0;
 
             var frame;
-            var type = L.getType(2);
+            var type = Lua.getType(L, 2);
 
             if (type === Lua.TNUMBER) {
-                frame = L.checkInt(2);
+                frame = Lua.checkInt(L, 2);
             } else if (type === Lua.TSTRING) {
-                frame = L.getString(2);
+                frame = Lua.getString(L, 2);
             } else {
-                L.throwTypeError(2, "integer or string");
+                Lua.throwTypeError(L, 2, "integer or string");
             }
             
             timeline.gotoAndPlay(frame);
@@ -78,14 +78,14 @@ Lua.onready(() => {
             if (!timeline) return 0;
 
             var frame;
-            var type = L.getType(2);
+            var type = Lua.getType(L, 2);
 
             if (type === Lua.TNUMBER) {
-                frame = L.checkInt(2);
+                frame = Lua.checkInt(L, 2);
             } else if (type === Lua.TSTRING) {
-                frame = L.getString(2);
+                frame = Lua.getString(L, 2);
             } else {
-                L.throwTypeError(2, "integer or string");
+                Lua.throwTypeError(L, 2, "integer or string");
             }
             
             timeline.gotoAndStop(frame);
@@ -96,7 +96,7 @@ Lua.onready(() => {
             var timeline = luaGetObject(L, 1, "Timeline");
             if (!timeline) return 0;
 
-            var targetName = L.checkString(2);
+            var targetName = Lua.checkString(L, 2);
             if (!targetName) return 0;
 
             for (let layer of timeline.layers) {
@@ -107,7 +107,7 @@ Lua.onready(() => {
                 }
             }
 
-            L.pushNil();
+            Lua.pushNil(L);
             return 1;
         }
     });

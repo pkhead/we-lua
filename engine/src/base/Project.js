@@ -23,17 +23,17 @@
 Lua.onready(() => {
     luaCreateClass(window.globalLua, "Base", "Project", {
         __get__width(L) {
-            L.pushNumber(this.width);
+            Lua.pushNumber(L, this.width);
             return 1;
         },
 
         __get__height(L) {
-            L.pushNumber(this.height);
+            Lua.pushNumber(L, this.height);
             return 1;
         },
 
         __get__framerate(L) {
-            L.pushNumber(this.framerate);
+            Lua.pushNumber(L, this.framerate);
             return 1;
         },
 
@@ -43,29 +43,29 @@ Lua.onready(() => {
         },
 
         __set__panX(L) {
-            this.pan.x = L.checkNumber(3);
+            this.pan.x = Lua.checkNumber(L, 3);
         },
 
         __get__panX(L) {
-            L.pushNumber(this.pan.x);
+            Lua.pushNumber(L, this.pan.x);
             return 1;
         },
 
         __set__panY(L) {
-            this.pan.y = L.checkNumber(3);
+            this.pan.y = Lua.checkNumber(L, 3);
         },
 
         __get__panY(L) {
-            L.pushNumber(this.pan.y);
+            Lua.pushNumber(L, this.pan.y);
             return 1;
         },
 
         __set__zoom(L) {
-            this.zoom = L.checkNumber(3);
+            this.zoom = Lua.checkNumber(L, 3);
         },
 
         __get__zoom(L) {
-            L.pushNumber(this.zoom);
+            Lua.pushNumber(L, this.zoom);
             return 1;
         },
 
@@ -75,8 +75,9 @@ Lua.onready(() => {
 
         }
         */
-    })
-})
+    });
+});
+
 Wick.Project = class extends Wick.Base {
     /**
      * Create a project.
@@ -91,8 +92,8 @@ Wick.Project = class extends Wick.Base {
         super(args);
 
         this.itemAttributes = new Map();
-        this.luaFuncs = [];
-        this.luaScripts = [];
+        this.luaFuncs = []; // local functions created by scripts (need to keep track in order to free them)
+        this.luaScripts = []; // array of lua chunks for each script
 
         this._name = args.name || 'My Project';
         this._width = args.width || 720;
@@ -182,19 +183,29 @@ Wick.Project = class extends Wick.Base {
         this.history.pushState(Wick.History.StateType.ONLY_VISIBLE_OBJECTS);
     }
 
-    luaLoadScript(L, string, name) {
-        L.loadString(string, name);
-        var ref = L.ref();
+    /**
+     * Saves the compiled chunk into the Lua register, and registers the register pointer (Error: Too Much Registers)
+     * @param {*} L
+     */
+    luaSaveScript(L) {
+        var ref = Lua.ref(L);
         this.luaScripts.push(ref);
+
         return ref;
     }
 
     luaClearScripts(L) {
         for (let ref of this.luaScripts) {
-            L.unref(ref);
+            Lua.unref(L, ref);
         }
 
         this.luaScripts = [];
+
+        for (let f of this.luaFuncs) {
+            Lua.unregisterFunc(f);
+        }
+
+        this.luaFuncs = [];
     }
 
     /**
@@ -1572,6 +1583,10 @@ Wick.Project = class extends Wick.Base {
 
         this.selection.clear();
 
+        // set global project
+        luaWrapObject(globalLua, this);
+        Lua.setGlobal(globalLua, "project");
+        
         // Start tick loop
         this._tickIntervalID = setInterval(() => {
             args.onBeforeTick();
@@ -1666,7 +1681,7 @@ Wick.Project = class extends Wick.Base {
         // unreference and clear item attributes
         for (let pair of this.itemAttributes) {
             let ref = pair[1];
-            window.globalLua.unref(ref);
+            Lua.unref(window.globalLua, ref);
         }
 
         this.itemAttributes.clear();

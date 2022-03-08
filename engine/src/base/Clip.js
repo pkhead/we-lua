@@ -50,84 +50,84 @@ Lua.onready(() => {
         },
 
         __get__x(L) {
-            L.pushNumber(this.x);
+            Lua.pushNumber(L, this.x);
             return 1;
         },
 
         __set__x(L) {
-            this.x = L.checkNumber(3);
+            this.x = Lua.checkNumber(L, 3);
         },
 
         __get__y(L) {
-            L.pushNumber(this.y);
+            Lua.pushNumber(L, this.y);
             return 1;
         },
 
         __set__y(L) {
-            this.y = L.checkNumber(3);
+            this.y = Lua.checkNumber(L, 3);
         },
 
         __get__width(L) {
-            L.pushNumber(this.width);
+            Lua.pushNumber(L, this.width);
             return 1;
         },
 
         __set__width(L) {
-            this.width = L.checkNumber(3);
+            this.width = Lua.checkNumber(L, 3);
         },
 
         __get__height(L) {
-            L.pushNumber(this.height);
+            Lua.pushNumber(L, this.height);
             return 1;
         },
 
         __set__height(L) {
-            this.height = L.checkNumber(3);
+            this.height = Lua.checkNumber(L, 3);
         },
 
         __get__scaleX(L) {
-            L.pushNumber(this.scaleX);
+            Lua.pushNumber(L, this.scaleX);
             return 1;
         },
 
         __set__scaleX(L) {
-            this.scaleX = L.checkNumber(3);
+            this.scaleX = Lua.checkNumber(L, 3);
         },
 
         __get__scaleY(L) {
-            L.pushNumber(this.scaleY);
+            Lua.pushNumber(L, this.scaleY);
             return 1;
         },
 
         __set__scaleY(L) {
-            this.scaleY = L.checkNumber(3);
+            this.scaleY = Lua.checkNumber(L, 3);
         },
 
         __get__rotation(L) {
-            L.pushNumber(this.rotation);
+            Lua.pushNumber(L, this.rotation);
             return 1;
         },
 
         __set__rotation(L) {
-            this.rotation = L.checkNumber(3);
+            this.rotation = Lua.checkNumber(L, 3);
         },
 
         __get__opacity(L) {
-            L.pushNumber(this.opacity);
+            Lua.pushNumber(L, this.opacity);
             return 1;
         },
 
         __set__opacity(L) {
-            this.opacity = L.checkNumber(3);
+            this.opacity = Lua.checkNumber(L, 3);
         },
 
         __get__identifier(L) {
-            L.pushString(this.identifier);
+            Lua.pushString(L, this.identifier);
             return 1;
         },
 
         __get__isClone(L) {
-            L.pushBoolean(this.isClone);
+            Lua.pushBoolean(L, this.isClone);
             return 1;
         }
     });

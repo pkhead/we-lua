@@ -25,7 +25,7 @@ Lua.onready(() => {
     {
         /*
         gc(L) {
-            var self = L.getUserdata(1, "WickObject");
+            var self = Lua.getUserdata(L, 1, "WickObject");
             luaDeleteWrapper(L, self);
         },
         */
@@ -36,12 +36,12 @@ Lua.onready(() => {
             var b = luaGetObject(L, 2, "Base");
             if (!b) return 0;
 
-            L.pushBoolean(a === b);
+            Lua.pushBoolean(L, a === b);
             return 1;
         },
 
         __get__uuid(L) {
-            L.pushString(this.uuid);
+            Lua.pushString(L, this.uuid);
             return 1;
         },
 
@@ -65,23 +65,23 @@ Lua.onready(() => {
             var item = luaGetObject(L, 1, "Base");
             if (!item) return 0;
             
-            L.createTable();
+            Lua.createTable(L);
 
             for (let i = 0; i < item._children.length; i++) {
                 let child = item._children[i];
                 luaWrapObject(L, child);
-                L.rawSetInteger(-2, i + 1);
+                Lua.rawSetInteger(L, -2, i + 1);
             }
 
             return 1;
         },
 
         __func__isA(L) {
-            var className = L.getString(2);
+            var className = Lua.getString(L, 2);
             if (!className) return 0;
 
             var res = luaIsA(L, 1, className);
-            L.pushBoolean(res);
+            Lua.pushBoolean(L, res);
             return 1;
         },
 
@@ -94,11 +94,11 @@ Lua.onready(() => {
             var attributes = itemAttributes.get(item);
 
             if (attributes) {
-                L.pushRef(attributes);
+                Lua.pushRef(L, attributes);
             } else {
-                L.createTable();
-                L.pushFromStack(-1);
-                attributes = L.ref();
+                Lua.createTable(L);
+                Lua.pushFromStack(L, -1);
+                attributes = Lua.ref(L);
                 itemAttributes.set(item, attributes);
             }
 

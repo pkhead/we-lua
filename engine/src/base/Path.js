@@ -20,11 +20,11 @@
 Lua.onready(() => {
     luaCreateClass(window.globalLua, "Base", "Path", {
         __set__text(L) {
-            this.textContent = L.getString(3);
+            this.textContent = Lua.getString(L, 3);
         },
 
         __get__text(L) {
-            L.pushString(this.textContent);
+            Lua.pushString(L, this.textContent);
             return 1;
         },
     });

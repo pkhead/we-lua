@@ -2,18 +2,18 @@ Lua.onready(function() {
     window.globalLua = Lua.createState();
 
     // remove io library
-    globalLua.pushNil();
-    globalLua.setGlobal("io");
+    Lua.pushNil(globalLua);
+    Lua.setGlobal(globalLua, "io");
 
     // set debug.breakpoint to start JS debugger
-    globalLua.pushGlobal("debug");
-    globalLua.pushString("breakpoint");
-    globalLua.pushFunction(L => {
+    Lua.pushGlobal(globalLua, "debug");
+    Lua.pushString(globalLua, "breakpoint");
+    Lua.pushFunction(globalLua, L => {
         debugger;
         return 0;
     });
-    globalLua.setTable(-3);
-    globalLua.pop(1);
+    Lua.setTable(globalLua, -3);
+    Lua.pop(globalLua, 1);
 });
 
 // define WickObject struct
@@ -34,6 +34,35 @@ var luaClassMetafields = {};
 var luaClassSupers = {};
 
 /**
+ * Utility function to copy a Lua table from the state
+ * @param {integer} L The target Lua state 
+ * @param {integer} index The index of the table to copy 
+ */
+
+// too lazy to figure it out
+// https://stackoverflow.com/questions/4535152/cloning-a-lua-table-in-lua-c-api
+function luaCopyTable(L, i) {
+    Lua.createTable(L);
+    // orig_table table
+
+    Lua.pushNil(L);
+    // orig_table table nil
+
+    while (Lua.next(L, i - 2)) {
+        // orig_table table key value
+        Lua.pushFromStack(L, -2);
+        // orig_table table key value key
+
+        Lua.insert(L, -2);
+        // orig_table table key key value
+        Lua.setTable(L, -4);
+        // orig_table table key
+    }
+
+    // orig_table table
+}
+
+/**
  * Gets/creates a userdata wrapper for a Wick object
  * @param {Lua.State} L The Lua.State
  * @param {Wick.Base} obj The Wick object to wrap. A null or undefined will push nil. 
@@ -41,24 +70,24 @@ var luaClassSupers = {};
  */
 function luaWrapObject(L, obj) {
     if (!obj) {
-        L.pushNil();
+        Lua.pushNil(L);
         return null;
     } else {
         /*var ud = luaWrappers.get(obj);
 
         if (ud) {
-            //L.pushRef(ud.ref);
+            //Lua.pushRef(L, ud.ref);
             return ud;
         }*/
 
-        var ud = L.createUserdata("WickObject");
+        var ud = Lua.createUserdata(L, "WickObject");
         ud.uuid = obj.uuid;
 
-        //L.pushFromStack(-1);
-        //ud.ref = L.ref();
+        //Lua.pushFromStack(L, -1);
+        //ud.ref = Lua.ref(L);
 
-        L.pushMetatable(obj._classname);
-        L.setMetatable(-2);
+        Lua.pushMetatable(L, obj._classname);
+        Lua.setMetatable(L, -2);
 
         //luaWrappers.set(obj, ud);
 
@@ -79,21 +108,21 @@ function luaDeleteWrapper(L, ud) {
 */
 
 function luaMetafield(L, i, k) {
-    L.getMetatable(i);
-    L.pushString(k);
-    L.getTable(-2);
+    Lua.getMetatable(L, i);
+    Lua.pushString(L, k);
+    Lua.getTable(L, -2);
 }
 
 function luaIsA(L, i, targetClass) {
-    if (L.getType(i) !== Lua.TUSERDATA) return false;
-    if (L.getMetatable(i) === 0) return false;
+    if (Lua.getType(L, i) !== Lua.TUSERDATA) return false;
+    if (Lua.getMetatable(L, i) === 0) return false;
 
-    L.pushString("__name");
-    L.getTable(-2);
+    Lua.pushString(L, "__name");
+    Lua.getTable(L, -2);
 
-    var className = L.getString(-1);
+    var className = Lua.getString(L, -1);
 
-    L.pop(2);
+    Lua.pop(L, 2);
 
     while (className !== targetClass) {
         className = luaClassSupers[className];
@@ -111,14 +140,14 @@ function luaIsA(L, i, targetClass) {
  */
 function luaGetObject(L, i, classname) {
     if (!luaIsA(L, i, classname)) {
-        L.throwTypeError(i, classname);
+        Lua.throwTypeError(L, i, classname);
         return null;
     }
 
-    var self = L.getUserdata(i, "WickObject");
+    var self = Lua.getUserdata(L, i, "WickObject");
 
     if (!self) {
-        L.throwError("unknown exception");
+        Lua.throwError(L, "unknown exception");
         return null;
     }
 
@@ -132,29 +161,29 @@ function luaGetObject(L, i, classname) {
  */
 function luaToTable(L, source) {
     if (!source) {
-        L.pushNil();
+        Lua.pushNil(L);
         return;
     }
 
-    L.createTable();
+    Lua.createTable(L);
 
     for (let k in source) {
         let v = source[k];
 
-        L.pushString(k.toString());
+        Lua.pushString(L, k.toString());
 
         if (v instanceof Wick.Base) {
             luaWrapObject(L, v);
         } else {
             switch(typeof v) {
                 case "number":
-                    L.pushNumber(v);
+                    Lua.pushNumber(L, v);
                     break;
                 case "string":
-                    L.pushString(v);
+                    Lua.pushString(L, v);
                     break;
                 case "boolean":
-                    L.pushBoolean(v);
+                    Lua.pushBoolean(L, v);
                     break;
                 case "object":
                     console.warn("Converting unknown object type");
@@ -163,8 +192,59 @@ function luaToTable(L, source) {
             }
         }
 
-        L.setTable(-3);
+        Lua.setTable(L, -3);
     }
+}
+
+/**
+ * Utility function to convert Lua table to JS object
+ * @param {integer} L The target Lua.State 
+ * @param {integer} index The index of the source table
+ */
+function luaFromTable(L, index) {
+    var res = {};
+
+    Lua.pushNil(L);
+
+    while (Lua.next(L, index - 1)) {
+        var key = Lua.getString(L, -2);
+        var type = Lua.getType(L, -1);
+        var val;
+
+        switch(type) {
+            case Lua.TNIL:
+                val = null;
+                break;
+            case Lua.TBOOLEAN:
+                val = Lua.getBoolean(L, -1);
+                break;
+            case Lua.TLIGHTUSERDATA:
+                throw new Lua.Error("Undefined behavior: Attempting to read a light userdata");
+            case Lua.TNUMBER:
+                val = Lua.getNumber(L, -1);
+                break;
+            case Lua.TSTRING:
+                val = Lua.getString(L, -1);
+                break;
+            case Lua.TTABLE:
+                val = luaFromTable(L, -1);
+                break;
+            case Lua.TFUNCTION:
+                Lua.throwError(L, "unexpected type \"function\" in table");
+                break;
+            case Lua.TUSERDATA:
+                Lua.throwError(L, "unexpected type \"userdata\" in table");
+                break;
+            case Lua.TTHREAD:
+                throw new Lua.Error("Undefined behavior: Attempting to read a thread");
+        }
+
+        res[key] = val;
+
+        Lua.pop(L, 1);
+    }
+
+    return res;
 }
 
 /**
@@ -179,7 +259,7 @@ function luaToTable(L, source) {
  * @param {object} fields The list of setters, getters, and metamethods
  */
 function luaCreateClass(L, superName, className, fields) {
-    L.createMetatable(className);
+    Lua.createMetatable(L, className);
     luaClassSupers[className] = superName;
 
     var handlers = {};
@@ -192,8 +272,8 @@ function luaCreateClass(L, superName, className, fields) {
             let fname = k.slice(8);
             let v = fields[k];
 
-            L.pushFunction(v);
-            funcs[k] = L.ref();
+            Lua.pushFunction(L, v);
+            funcs[k] = Lua.ref(L);
         }
     }
     
@@ -205,7 +285,7 @@ function luaCreateClass(L, superName, className, fields) {
 
         handlers.index = (L, index) => {
             if (("__func__" + index) in funcs) {
-                L.pushRef(funcs["__func__" + index]);
+                Lua.pushRef(L, funcs["__func__" + index]);
                 return 1;
             } else if (("__get__" + index) in fields) {
                 let item = luaGetObject(L, 1, className);
@@ -230,14 +310,14 @@ function luaCreateClass(L, superName, className, fields) {
     } else {
         handlers.index = (L, index) => {
             if (("__func__" + index) in funcs) {
-                L.pushRef(funcs["__func__" + index]);
+                Lua.pushRef(L, funcs["__func__" + index]);
                 return 1;
             } else if (("__get__" + index) in fields) {
                 let item = luaGetObject(L, 1, className);
                 if (!item) return 0;
                 return fields["__get__" + index].call(item, L);
             } else {
-                L.throwError(`attempt to access nil field "${index}"`);
+                Lua.throwError(L, `attempt to access nil field "${index}"`);
                 return 0;
             }
         };
@@ -248,7 +328,7 @@ function luaCreateClass(L, superName, className, fields) {
                 if (!item) return 0;
                 fields[index].call(item, L);
             } else {
-                L.throwError(`attempt to access nil field ${index}`);
+                Lua.throwError(L, `attempt to access nil field ${index}`);
             }
 
             return 0;
@@ -258,23 +338,23 @@ function luaCreateClass(L, superName, className, fields) {
     luaClassHandlers[className] = handlers;
 
     // wrap the index handler to the lua metatable
-    L.pushString("__index");
-    L.pushFunction(L => {
-        var index = L.getString(2);
+    Lua.pushString(L, "__index");
+    Lua.pushFunction(L, L => {
+        var index = Lua.getString(L, 2);
         
         return handlers.index(L, index);
     });
-    L.setTable(-3);
+    Lua.setTable(L, -3);
 
     // wrap the newindex handler to the lua metatable
-    L.pushString("__newindex");
-    L.pushFunction(L => {
-        var index = L.getString(2);
+    Lua.pushString(L, "__newindex");
+    Lua.pushFunction(L, L => {
+        var index = Lua.getString(L, 2);
 
         handlers.newindex(L, "__set__" + index);
         return 0;
     });
-    L.setTable(-3);
+    Lua.setTable(L, -3);
 
     // add the rest of the fields into the metatable
     // setters/getters are differentiated from metamethods
@@ -285,14 +365,14 @@ function luaCreateClass(L, superName, className, fields) {
 
     for (let k in fields) {
         if (k[0] !== "_") {
-            L.pushString("__" + k);
-            L.pushFunction(fields[k]);
-            L.pushFromStack(-1);
-            metafields[k] = L.ref();
+            Lua.pushString(L, "__" + k);
+            Lua.pushFunction(L, fields[k]);
+            Lua.pushFromStack(L, -1);
+            metafields[k] = Lua.ref(L);
             set.add(k);
             console.log("metafield");
-            L.stackDump();
-            L.setTable(-3);
+            Lua.stackDump(L);
+            Lua.setTable(L, -3);
         }
     }
 
@@ -309,9 +389,9 @@ function luaCreateClass(L, superName, className, fields) {
                 let v = fieldSrc[k];
 
                 if (!set.has(k)) {
-                    L.pushString("__" + k);
-                    L.pushRef(v);
-                    L.setTable(-3);
+                    Lua.pushString(L, "__" + k);
+                    Lua.pushRef(L, v);
+                    Lua.setTable(L, -3);
 
                     set.add(k);
                 }
