@@ -1,5 +1,5 @@
 /*Wick Engine https://github.com/Wicklets/wick-engine*/
-var WICK_ENGINE_BUILD_VERSION = "2021.1.18.12.6.20";
+var WICK_ENGINE_BUILD_VERSION = "2022.4.30.15.53.55";
 /*!
  * Paper.js v0.12.4 - The Swiss Army Knife of Vector Graphics Scripting.
  * http://paperjs.org/
@@ -47149,7 +47149,20 @@ GlobalAPI = class {
 
   hitTestOptions(options) {
     this.scriptOwner.project.hitTestOptions = options;
-  }
+  } // /**
+  //  * Gets a sibling clip
+  //  * @param {string} name The name of the script
+  //  * @returns {object} The clip with the given name, or null. 
+  //  */
+  // getClip(name) {
+  //     var parentClip = this.scriptOwner.parentClip;
+  //     if (!parentClip) return null;
+  //     for (let child of parentClip.namedChildren) {
+  //         if (child.name === name) return child;
+  //     }
+  //     return null;
+  // }
+
   /**
    * Returns an object representing the project with properties such as width, height, framerate, background color, and name.
    * @returns {object} Project object.
@@ -55693,6 +55706,7 @@ Wick.Tickable = class extends Wick.Base {
     this.addScript('default', '');
     this._onEventFns = {};
     this._cachedScripts = {};
+    this._cachedActiveNamedChildren = null;
   }
 
   _deserialize(data) {
@@ -55971,15 +55985,13 @@ Wick.Tickable = class extends Wick.Base {
     } // Run functions attached using onEvent
 
 
-    var eventFnError = null;
-    this.getEventFns(name).forEach(eventFn => {
-      if (eventFnError) return;
-      eventFnError = this._runFunction(eventFn, name, parameters);
-    });
+    for (let eventFn of this.getEventFns(name)) {
+      let eventFnError = this._runFunction(eventFn, name, parameters);
 
-    if (eventFnError) {
-      this.project.error = eventFnError;
-      return;
+      if (eventFnError) {
+        this.project.error = eventFnError;
+        return;
+      }
     } // Run function inside tab
 
 
@@ -56026,8 +56038,9 @@ Wick.Tickable = class extends Wick.Base {
       }
     } else {
       this._mouseState = 'out';
-    } // Call tick event function that corresponds to state.
+    }
 
+    this._cachedActiveNamedChildren = null; // Call tick event function that corresponds to state.
 
     if (!this._onscreen && !this._onscreenLastTick) {
       this._onInactive();
@@ -56198,7 +56211,8 @@ Wick.Tickable = class extends Wick.Base {
     var thisScope = this instanceof Wick.Frame ? this.parentClip : this;
 
     try {
-      fn.bind(thisScope)();
+      //fn.bind(thisScope)();
+      fn.call(thisScope);
     } catch (e) {
       // Catch runtime errors
       console.error(e);
@@ -58097,7 +58111,7 @@ Wick.Clip = class extends Wick.Tickable {
         let y = point[1] - center.y;
         max_r = Math.max(max_r, x*x + y*y);
     }
-     return Math.sqrt(max_r);
+      return Math.sqrt(max_r);
     */
   } // Gives clockwise in screen space, which is ccw in regular axes
 
@@ -58394,12 +58408,10 @@ Wick.Clip = class extends Wick.Tickable {
   }
 
   _tickChildren() {
-    var childError = null;
-    this.timeline.frames.forEach(frame => {
-      if (childError) return;
-      childError = frame.tick();
-    });
-    return childError;
+    for (let frame of this.timeline.activeFrames) {
+      let err = frame.tick();
+      if (err) return err;
+    }
   }
 
   _attachChildClipReferences() {
@@ -63976,7 +63988,7 @@ Wick.View.Frame = class extends Wick.View {
     var originalWickPath = child.data.wickUUID ? Wick.ObjectCache.getObjectByUUID(child.data.wickUUID) : null;
     var pathJSON = Wick.View.Path.exportJSON(child);
     var wickPath = new Wick.Path({json:pathJSON});
-     this.model.addPath(wickPath);
+      this.model.addPath(wickPath);
     wickPath.fontWeight = originalWickPath ? originalWickPath.fontWeight : 400;
     wickPath.fontStyle = originalWickPath ? originalWickPath.fontStyle : 'normal';
     wickPath.identifier = originalWickPath ? originalWickPath.identifier : null;

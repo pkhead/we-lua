@@ -74,6 +74,7 @@ Wick.Tickable = class extends Wick.Base {
 
         this._onEventFns = {};
         this._cachedScripts = {};
+        this._cachedActiveNamedChildren = null;
     }
 
     _deserialize (data) {
@@ -332,6 +333,7 @@ Wick.Tickable = class extends Wick.Base {
         if(!Wick.Tickable.possibleScripts.indexOf(name) === -1) {
             console.error(name + ' is not a valid script!');
         }
+
         // Don't run scripts if this object is the focus
         // (this makes it so preview play will always play, even if the parent Clip of the timeline has a stop script)
         if(this.project && this.project.focus === this) {
@@ -339,17 +341,13 @@ Wick.Tickable = class extends Wick.Base {
         }
 
         // Run functions attached using onEvent
-        var eventFnError = null;
-        this.getEventFns(name).forEach(eventFn => {
-            if(eventFnError) return;
-            eventFnError = this._runFunction(eventFn, name, parameters);
-        });
-
-        if (eventFnError) {
-            this.project.error = eventFnError;
-            return;
+        for (let eventFn of this.getEventFns(name)) {
+            let eventFnError = this._runFunction(eventFn, name, parameters);
+            if (eventFnError) {
+                this.project.error = eventFnError;
+                return; 
+            }
         }
-
 
         // Run function inside tab
         if(this.scriptIsContentful(name)) {
@@ -392,6 +390,8 @@ Wick.Tickable = class extends Wick.Base {
         } else {
             this._mouseState = 'out';
         }
+
+        this._cachedActiveNamedChildren = null;
 
         // Call tick event function that corresponds to state.
         if(!this._onscreen && !this._onscreenLastTick) {
@@ -519,15 +519,15 @@ Wick.Tickable = class extends Wick.Base {
     _runFunction (fn, name, parameters) {
           var error = null;
 
-          // Attach API methods
-          var globalAPI = new GlobalAPI(this);
-          var otherObjects = this.parentClip ? this.parentClip.activeNamedChildren : [];
-          var apiMembers = globalAPI.apiMembers.concat(otherObjects.map(otherObject => {
-              return {
-                  name: otherObject.identifier,
-                  fn: otherObject,
-              }
-          }));
+        // Attach API methods
+        var globalAPI = new GlobalAPI(this);
+        var otherObjects = this.parentClip ? this.parentClip.activeNamedChildren : [];
+        var apiMembers = globalAPI.apiMembers.concat(otherObjects.map(otherObject => {
+            return {
+                name: otherObject.identifier,
+                fn: otherObject,
+            }
+        }));
 
           // Add in parameters, if necessary.
           if (parameters) {
@@ -560,7 +560,8 @@ Wick.Tickable = class extends Wick.Base {
           // Run the function
           var thisScope = this instanceof Wick.Frame ? this.parentClip : this;
           try {
-              fn.bind(thisScope)();
+              //fn.bind(thisScope)();
+              fn.call(thisScope);
           } catch (e) {
               // Catch runtime errors
               console.error(e);

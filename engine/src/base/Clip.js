@@ -1282,12 +1282,10 @@ Wick.Clip = class extends Wick.Tickable {
     }
 
     _tickChildren() {
-        var childError = null;
-        this.timeline.frames.forEach(frame => {
-            if (childError) return;
-            childError = frame.tick();
-        });
-        return childError;
+        for (let frame of this.timeline.activeFrames) {
+            let err = frame.tick();
+            if (err) return err;
+        }
     }
 
     _attachChildClipReferences() {

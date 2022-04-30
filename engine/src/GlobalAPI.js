@@ -114,6 +114,22 @@ GlobalAPI = class {
         this.scriptOwner.project.hitTestOptions = options;
     }
 
+    // /**
+    //  * Gets a sibling clip
+    //  * @param {string} name The name of the script
+    //  * @returns {object} The clip with the given name, or null. 
+    //  */
+    // getClip(name) {
+    //     var parentClip = this.scriptOwner.parentClip;
+    //     if (!parentClip) return null;
+
+    //     for (let child of parentClip.namedChildren) {
+    //         if (child.name === name) return child;
+    //     }
+
+    //     return null;
+    // }
+
     /**
      * Returns an object representing the project with properties such as width, height, framerate, background color, and name.
      * @returns {object} Project object.
