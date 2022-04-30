@@ -24,7 +24,7 @@ GlobalAPI = class {
      */
     static get apiMemberNames () {
         return [
-            'stop','play','gotoAndStop','gotoAndPlay','gotoNextFrame','gotoPrevFrame',
+            'stop','play','gotoAndStop','gotoAndPlay','gotoNextFrame','gotoPrevFrame','getClip',
             // These are currently disabled, they are very slow for some reason.
             // They are currently hacked in inside Tickable._runFunction
             //'project','root','parent','parentObject',
@@ -114,21 +114,47 @@ GlobalAPI = class {
         this.scriptOwner.project.hitTestOptions = options;
     }
 
-    // /**
-    //  * Gets a sibling clip
-    //  * @param {string} name The name of the script
-    //  * @returns {object} The clip with the given name, or null. 
-    //  */
-    // getClip(name) {
-    //     var parentClip = this.scriptOwner.parentClip;
-    //     if (!parentClip) return null;
+    /**
+     * Gets a sibling clip
+     * @param {string} name The name of the clip
+     * @returns {object} The clip with the given name, or null. 
+     */
+    getClip(query) {
+        var parent = this.scriptOwner.parentClip;
 
-    //     for (let child of parentClip.namedChildren) {
-    //         if (child.name === name) return child;
-    //     }
+        if (!parent) return null;
+        
+        var res = null;
 
-    //     return null;
-    // }
+        outer: for (let frame of parent.timeline.frames) {
+            // objects that can be accessed by their identifiers:
+
+            // frames
+            if (frame.identifier === query) {
+                res = frame;
+                break outer;
+            }
+
+            // clips
+            for (let clip of frame.clips) {
+                if (clip.identifier === query) {
+                    res = clip;
+                    break outer;
+                }
+            }
+
+            // dynamic text paths
+            for (let path of frame.dynamicTextPaths) {
+                if (path.identifier === query) {
+                    res = path;
+                    break outer;
+                }
+            }
+
+        }
+        
+        return res && Wick.ObjectCache.getObjectByUUID(res.uuid);
+    }
 
     /**
      * Returns an object representing the project with properties such as width, height, framerate, background color, and name.

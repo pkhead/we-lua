@@ -1,5 +1,5 @@
 /*Wick Engine https://github.com/Wicklets/wick-engine*/
-var WICK_ENGINE_BUILD_VERSION = "2022.4.30.15.53.55";
+var WICK_ENGINE_BUILD_VERSION = "2022.4.30.18.50.33";
 /*!
  * Paper.js v0.12.4 - The Swiss Army Knife of Vector Graphics Scripting.
  * http://paperjs.org/
@@ -47061,7 +47061,7 @@ GlobalAPI = class {
    * @type {string[]}
    */
   static get apiMemberNames() {
-    return ['stop', 'play', 'gotoAndStop', 'gotoAndPlay', 'gotoNextFrame', 'gotoPrevFrame', // These are currently disabled, they are very slow for some reason.
+    return ['stop', 'play', 'gotoAndStop', 'gotoAndPlay', 'gotoNextFrame', 'gotoPrevFrame', 'getClip', // These are currently disabled, they are very slow for some reason.
     // They are currently hacked in inside Tickable._runFunction
     //'project','root','parent','parentObject',
     'isMouseDown', 'mouseX', 'mouseY', 'mouseMoveX', 'mouseMoveY', 'key', 'keys', 'isKeyDown', 'keyIsDown', 'isKeyJustPressed', 'keyIsJustPressed', 'random', 'playSound', 'stopAllSounds', 'onEvent', 'hideCursor', 'showCursor', 'hitTestOptions'];
@@ -47149,20 +47149,46 @@ GlobalAPI = class {
 
   hitTestOptions(options) {
     this.scriptOwner.project.hitTestOptions = options;
-  } // /**
-  //  * Gets a sibling clip
-  //  * @param {string} name The name of the script
-  //  * @returns {object} The clip with the given name, or null. 
-  //  */
-  // getClip(name) {
-  //     var parentClip = this.scriptOwner.parentClip;
-  //     if (!parentClip) return null;
-  //     for (let child of parentClip.namedChildren) {
-  //         if (child.name === name) return child;
-  //     }
-  //     return null;
-  // }
+  }
+  /**
+   * Gets a sibling clip
+   * @param {string} name The name of the clip
+   * @returns {object} The clip with the given name, or null. 
+   */
 
+
+  getClip(query) {
+    var parent = this.scriptOwner.parentClip;
+    if (!parent) return null;
+    var res = null;
+
+    outer: for (let frame of parent.timeline.frames) {
+      // objects that can be accessed by their identifiers:
+      // frames
+      if (frame.identifier === query) {
+        res = frame;
+        break outer;
+      } // clips
+
+
+      for (let clip of frame.clips) {
+        if (clip.identifier === query) {
+          res = clip;
+          break outer;
+        }
+      } // dynamic text paths
+
+
+      for (let path of frame.dynamicTextPaths) {
+        if (path.identifier === query) {
+          res = path;
+          break outer;
+        }
+      }
+    }
+
+    return res && Wick.ObjectCache.getObjectByUUID(res.uuid);
+  }
   /**
    * Returns an object representing the project with properties such as width, height, framerate, background color, and name.
    * @returns {object} Project object.
@@ -55706,7 +55732,6 @@ Wick.Tickable = class extends Wick.Base {
     this.addScript('default', '');
     this._onEventFns = {};
     this._cachedScripts = {};
-    this._cachedActiveNamedChildren = null;
   }
 
   _deserialize(data) {
@@ -56038,9 +56063,8 @@ Wick.Tickable = class extends Wick.Base {
       }
     } else {
       this._mouseState = 'out';
-    }
+    } // Call tick event function that corresponds to state.
 
-    this._cachedActiveNamedChildren = null; // Call tick event function that corresponds to state.
 
     if (!this._onscreen && !this._onscreenLastTick) {
       this._onInactive();
@@ -56170,13 +56194,7 @@ Wick.Tickable = class extends Wick.Base {
     var error = null; // Attach API methods
 
     var globalAPI = new GlobalAPI(this);
-    var otherObjects = this.parentClip ? this.parentClip.activeNamedChildren : [];
-    var apiMembers = globalAPI.apiMembers.concat(otherObjects.map(otherObject => {
-      return {
-        name: otherObject.identifier,
-        fn: otherObject
-      };
-    })); // Add in parameters, if necessary.
+    var apiMembers = globalAPI.apiMembers; // Add in parameters, if necessary.
 
     if (parameters) {
       Object.keys(parameters).forEach(parameter => {

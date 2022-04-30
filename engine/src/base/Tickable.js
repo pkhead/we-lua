@@ -74,7 +74,6 @@ Wick.Tickable = class extends Wick.Base {
 
         this._onEventFns = {};
         this._cachedScripts = {};
-        this._cachedActiveNamedChildren = null;
     }
 
     _deserialize (data) {
@@ -391,8 +390,6 @@ Wick.Tickable = class extends Wick.Base {
             this._mouseState = 'out';
         }
 
-        this._cachedActiveNamedChildren = null;
-
         // Call tick event function that corresponds to state.
         if(!this._onscreen && !this._onscreenLastTick) {
             this._onInactive();
@@ -521,13 +518,7 @@ Wick.Tickable = class extends Wick.Base {
 
         // Attach API methods
         var globalAPI = new GlobalAPI(this);
-        var otherObjects = this.parentClip ? this.parentClip.activeNamedChildren : [];
-        var apiMembers = globalAPI.apiMembers.concat(otherObjects.map(otherObject => {
-            return {
-                name: otherObject.identifier,
-                fn: otherObject,
-            }
-        }));
+        var apiMembers = globalAPI.apiMembers;
 
           // Add in parameters, if necessary.
           if (parameters) {
