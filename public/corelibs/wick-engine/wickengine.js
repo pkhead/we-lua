@@ -1,5 +1,5 @@
 /*Wick Engine https://github.com/Wicklets/wick-engine*/
-var WICK_ENGINE_BUILD_VERSION = "2022.4.30.18.50.33";
+var WICK_ENGINE_BUILD_VERSION = "2022.5.1.6.6.39";
 /*!
  * Paper.js v0.12.4 - The Swiss Army Knife of Vector Graphics Scripting.
  * http://paperjs.org/
@@ -56194,7 +56194,16 @@ Wick.Tickable = class extends Wick.Base {
     var error = null; // Attach API methods
 
     var globalAPI = new GlobalAPI(this);
-    var apiMembers = globalAPI.apiMembers; // Add in parameters, if necessary.
+    var otherObjects = this.parentClip ? this.parentClip.activeNamedChildren : [];
+    var apiMembers = globalAPI.apiMembers; // Add in other objects
+
+    for (let otherObject of otherObjects) {
+      apiMembers.push({
+        name: otherObject.identifier,
+        fn: otherObject
+      });
+    } // Add in parameters, if necessary.
+
 
     if (parameters) {
       Object.keys(parameters).forEach(parameter => {
@@ -57413,9 +57422,10 @@ Wick.Clip = class extends Wick.Tickable {
 
 
   get activeNamedChildren() {
-    return this.namedChildren.filter(child => {
+    this._activeNamedChildren = this._activeNamedChildren || this.namedChildren.filter(child => {
       return child.onScreen;
     });
+    return this._activeNamedChildren;
   }
   /**
    * Resets the clip's timeline position.
@@ -58385,6 +58395,7 @@ Wick.Clip = class extends Wick.Tickable {
   }
 
   _onActivated() {
+    //this._activeNamedChildren = null;
     super._onActivated();
 
     this._tickChildren();

@@ -327,9 +327,11 @@ Wick.Clip = class extends Wick.Tickable {
      * @type {Wick.Base[]}
      */
     get activeNamedChildren() {
-        return this.namedChildren.filter(child => {
+        this._activeNamedChildren = this._activeNamedChildren || this.namedChildren.filter(child => {
             return child.onScreen;
         });
+
+        return this._activeNamedChildren;
     }
 
     /**
@@ -1242,6 +1244,8 @@ Wick.Clip = class extends Wick.Tickable {
     }
 
     _onActivated() {
+        //this._activeNamedChildren = null;
+
         super._onActivated();
         this._tickChildren();
 
