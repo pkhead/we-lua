@@ -1,5 +1,5 @@
 /*Wick Engine https://github.com/Wicklets/wick-engine*/
-var WICK_ENGINE_BUILD_VERSION = "2021.1.18.12.6.20";
+var WICK_ENGINE_BUILD_VERSION = "2022.6.21.20.41.11";
 /*!
  * Paper.js v0.12.4 - The Swiss Army Knife of Vector Graphics Scripting.
  * http://paperjs.org/
@@ -55972,9 +55972,15 @@ Wick.Tickable = class extends Wick.Base {
 
 
     var eventFnError = null;
+    var otherObjects;
     this.getEventFns(name).forEach(eventFn => {
       if (eventFnError) return;
-      eventFnError = this._runFunction(eventFn, name, parameters);
+
+      if (!otherObjects) {
+        otherObjects = this.parentClip ? this.parentClip.activeNamedChildren : [];
+      }
+
+      eventFnError = this._runFunction(eventFn, name, parameters, otherObjects);
     });
 
     if (eventFnError) {
@@ -55994,7 +56000,11 @@ Wick.Tickable = class extends Wick.Base {
 
       this._cachedScripts[name] = fn;
 
-      var error = this._runFunction(fn, name, parameters);
+      if (!otherObjects) {
+        otherObjects = this.parentClip ? this.parentClip.activeNamedChildren : [];
+      }
+
+      var error = this._runFunction(fn, name, parameters, otherObjects);
 
       if (error && this.project) {
         this.project.error = error;
@@ -56153,11 +56163,11 @@ Wick.Tickable = class extends Wick.Base {
    */
 
 
-  _runFunction(fn, name, parameters) {
+  _runFunction(fn, name, parameters, otherObjects) {
     var error = null; // Attach API methods
 
-    var globalAPI = new GlobalAPI(this);
-    var otherObjects = this.parentClip ? this.parentClip.activeNamedChildren : [];
+    var globalAPI = new GlobalAPI(this); //var otherObjects = this.parentClip ? this.parentClip.activeNamedChildren : [];
+
     var apiMembers = globalAPI.apiMembers.concat(otherObjects.map(otherObject => {
       return {
         name: otherObject.identifier,
@@ -58097,7 +58107,7 @@ Wick.Clip = class extends Wick.Tickable {
         let y = point[1] - center.y;
         max_r = Math.max(max_r, x*x + y*y);
     }
-     return Math.sqrt(max_r);
+      return Math.sqrt(max_r);
     */
   } // Gives clockwise in screen space, which is ccw in regular axes
 
@@ -58394,12 +58404,10 @@ Wick.Clip = class extends Wick.Tickable {
   }
 
   _tickChildren() {
-    var childError = null;
-    this.timeline.frames.forEach(frame => {
-      if (childError) return;
-      childError = frame.tick();
-    });
-    return childError;
+    for (let frame of this.timeline.activeFrames) {
+      let err = frame.tick();
+      if (err) return err;
+    }
   }
 
   _attachChildClipReferences() {
@@ -63976,7 +63984,7 @@ Wick.View.Frame = class extends Wick.View {
     var originalWickPath = child.data.wickUUID ? Wick.ObjectCache.getObjectByUUID(child.data.wickUUID) : null;
     var pathJSON = Wick.View.Path.exportJSON(child);
     var wickPath = new Wick.Path({json:pathJSON});
-     this.model.addPath(wickPath);
+      this.model.addPath(wickPath);
     wickPath.fontWeight = originalWickPath ? originalWickPath.fontWeight : 400;
     wickPath.fontStyle = originalWickPath ? originalWickPath.fontStyle : 'normal';
     wickPath.identifier = originalWickPath ? originalWickPath.identifier : null;
