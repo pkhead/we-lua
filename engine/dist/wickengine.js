@@ -1,5 +1,5 @@
 /*Wick Engine https://github.com/Wicklets/wick-engine*/
-var WICK_ENGINE_BUILD_VERSION = "2022.6.25.12.52.34";
+var WICK_ENGINE_BUILD_VERSION = "2022.6.25.13.33.55";
 /*!
  * Paper.js v0.12.4 - The Swiss Army Knife of Vector Graphics Scripting.
  * http://paperjs.org/
@@ -55972,15 +55972,9 @@ Wick.Tickable = class extends Wick.Base {
 
 
     var eventFnError = null;
-    var otherObjects;
     this.getEventFns(name).forEach(eventFn => {
       if (eventFnError) return;
-
-      if (!otherObjects) {
-        otherObjects = this.parentClip ? this.parentClip.activeNamedChildren : [];
-      }
-
-      eventFnError = this._runFunction(eventFn, name, parameters, otherObjects);
+      eventFnError = this._runFunction(eventFn, name, parameters);
     });
 
     if (eventFnError) {
@@ -56000,11 +55994,7 @@ Wick.Tickable = class extends Wick.Base {
 
       this._cachedScripts[name] = fn;
 
-      if (!otherObjects) {
-        otherObjects = this.parentClip ? this.parentClip.activeNamedChildren : [];
-      }
-
-      var error = this._runFunction(fn, name, parameters, otherObjects);
+      var error = this._runFunction(fn, name, parameters);
 
       if (error && this.project) {
         this.project.error = error;
@@ -56163,11 +56153,11 @@ Wick.Tickable = class extends Wick.Base {
    */
 
 
-  _runFunction(fn, name, parameters, otherObjects) {
+  _runFunction(fn, name, parameters) {
     var error = null; // Attach API methods
 
-    var globalAPI = new GlobalAPI(this); //var otherObjects = this.parentClip ? this.parentClip.activeNamedChildren : [];
-
+    var globalAPI = new GlobalAPI(this);
+    var otherObjects = this.parentClip ? this.parentClip.activeNamedChildren : [];
     var apiMembers = globalAPI.apiMembers.concat(otherObjects.map(otherObject => {
       return {
         name: otherObject.identifier,
