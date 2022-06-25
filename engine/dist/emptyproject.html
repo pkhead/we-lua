@@ -14,7 +14,7 @@
         <!-- The Wick Engine build is injected here during the engine build step (see gulpfile.js) -->
         <script>
             /*Wick Engine https://github.com/Wicklets/wick-engine*/
-var WICK_ENGINE_BUILD_VERSION = "2022.6.21.20.41.11";
+var WICK_ENGINE_BUILD_VERSION = "2022.6.25.12.52.34";
 /*!
  * Paper.js v0.12.4 - The Swiss Army Knife of Vector Graphics Scripting.
  * http://paperjs.org/
@@ -57135,7 +57135,9 @@ Wick.Clip = class extends Wick.Tickable {
       this.addObjects(args.objects);
     }
 
-    this._clones = [];
+    this._clones = []; // active named children cache
+
+    this._activeNamedChildren = null;
   }
 
   _serialize(args) {
@@ -57406,7 +57408,11 @@ Wick.Clip = class extends Wick.Tickable {
 
 
   get activeNamedChildren() {
-    return this.namedChildren.filter(child => {
+    if (this._activeNamedChildren) {
+      return this._activeNamedChildren;
+    }
+
+    return this._activeNamedChildren = this.namedChildren.filter(child => {
       return child.onScreen;
     });
   }
@@ -58419,6 +58425,8 @@ Wick.Clip = class extends Wick.Tickable {
   }
 
   _tickChildren() {
+    this._activeNamedChildren = null;
+
     for (let frame of this.timeline.activeFrames) {
       let err = frame.tick();
       if (err) return err;

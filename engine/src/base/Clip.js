@@ -68,6 +68,8 @@ Wick.Clip = class extends Wick.Tickable {
 
         this._clones = [];
 
+        // active named children cache
+        this._activeNamedChildren = null;
     }
 
     _serialize(args) {
@@ -327,7 +329,11 @@ Wick.Clip = class extends Wick.Tickable {
      * @type {Wick.Base[]}
      */
     get activeNamedChildren() {
-        return this.namedChildren.filter(child => {
+        if (this._activeNamedChildren) {
+            return this._activeNamedChildren;
+        }
+
+        return this._activeNamedChildren = this.namedChildren.filter(child => {
             return child.onScreen;
         });
     }
@@ -1282,6 +1288,7 @@ Wick.Clip = class extends Wick.Tickable {
     }
 
     _tickChildren() {
+        this._activeNamedChildren = null;
        for (let frame of this.timeline.activeFrames) {
            let err = frame.tick();
            if (err) return err;
